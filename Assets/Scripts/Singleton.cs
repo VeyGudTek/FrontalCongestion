@@ -5,7 +5,7 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
 {
     private static T Instance { get; set; }
 
-    public T GetInstance()
+    public static T GetInstance()
     {
         if (Instance == null)
         {
