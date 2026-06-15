@@ -17,7 +17,7 @@ public class CameraMover : MonoBehaviour
     {
         InputManager inputManager = InputManager.GetInstance();
 
-        Vector3 currPosition = transform.position;
+        Vector3 currPosition = Vector3.zero;
 
         if (inputManager.IsCrouching)
         {
@@ -31,7 +31,7 @@ public class CameraMover : MonoBehaviour
         currPosition.x += inputManager.GetMove.x * MoveMagnitude * Time.deltaTime;
         currPosition.z += inputManager.GetMove.y * MoveMagnitude * Time.deltaTime;
 
-        transform.position = currPosition;
+        transform.Translate(currPosition);
     }
 
     private void UpdateRotation()
@@ -43,10 +43,11 @@ public class CameraMover : MonoBehaviour
         temp.x -= Time.deltaTime * inputManager.GetLook.y * LookMagnitude;
         temp.y += Time.deltaTime * inputManager.GetLook.x * LookMagnitude;
         
-        temp.y = Mathf.Clamp(temp.y, -90, 90);
+        temp.x = Mathf.Clamp(temp.x, -90, 90);
 
         CurrentLook = temp;
 
-        transform.localRotation = Quaternion.Euler(CurrentLook.x, CurrentLook.y, 0f);
+        Quaternion target = Quaternion.Euler(CurrentLook.x, CurrentLook.y, 0f);
+        transform.rotation = Quaternion.Slerp(transform.rotation, target, Time.deltaTime * LookMagnitude);
     }
 }
