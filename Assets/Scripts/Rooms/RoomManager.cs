@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class RoomManager : Singleton<RoomManager>
 {
@@ -51,19 +52,36 @@ public class RoomManager : Singleton<RoomManager>
         }
 
         Room baseRoom = RoomList[Random.Range(0, RoomList.Count)];
-        Vector3 baseOffset = baseRoom.GetRandomAdjacentRelativePosition();
+        AdjacentPositionDto baseOffset = baseRoom.GetRandomAdjacentRelativePosition();
 
-        Vector3 newOffset = new Vector3(newSize.x / 2f, 0f, newSize.z / 2f);
+        Vector3 newOffset = GenerateNewOffset(newSize, baseOffset);
 
-        if (baseOffset.x < 0)
+        return baseRoom.transform.position + baseOffset.Point + newOffset;
+    }
+
+    private Vector3 GenerateNewOffset(Vector3 size, AdjacentPositionDto baseOffset)
+    {
+        float staticOffset = baseOffset.IsHorizontalEdge ? size.x / 2f : size.z / 2f;
+        float dynamicOffset = baseOffset.IsHorizontalEdge ?
+            Random.Range(0f, (size.z / 2f) - Constants.MinDoorWidth):
+            Random.Range(0f, (size.x / 2f) - Constants.MinDoorWidth);
+
+        if (Random.value < .5f)
         {
-            newOffset.x = -newOffset.x;
+            dynamicOffset = -dynamicOffset;
         }
-        if (baseOffset.z < 0)
+        if (baseOffset.Point.x < 0f && baseOffset.IsHorizontalEdge)
         {
-            newOffset.z = -newOffset.z;
+            staticOffset = -staticOffset;
+        }
+        if (baseOffset.Point.z < 0f && !baseOffset.IsHorizontalEdge)
+        {
+            staticOffset = -staticOffset;
         }
 
-        return baseRoom.transform.position + baseOffset + newOffset;
+        float x = baseOffset.IsHorizontalEdge ? staticOffset : dynamicOffset;
+        float z = baseOffset.IsHorizontalEdge ? dynamicOffset : staticOffset;
+
+        return new Vector3(x, 0f, z);
     }
 }
