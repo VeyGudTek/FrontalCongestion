@@ -475,6 +475,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomManager
   Room: {fileID: 3466017965835078635, guid: b1d76cc2c964551449692151579b4690, type: 3}
+  RoomList: []
 --- !u!4 &835744286
 Transform:
   m_ObjectHideFlags: 0
@@ -484,7 +485,7 @@ Transform:
   m_GameObject: {fileID: 835744284}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -5.08001, y: 0.64104, z: -8.94154}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

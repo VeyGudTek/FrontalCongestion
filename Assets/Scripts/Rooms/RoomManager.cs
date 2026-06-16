@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 public class RoomManager : Singleton<RoomManager>
 {
@@ -24,18 +23,36 @@ public class RoomManager : Singleton<RoomManager>
     {
         for (int i = 0; i < 2; i++)
         {
-            CreateRoom();
+            Vector3 newRoomSize = new Vector3(
+                Random.Range(MinRoomSize, MaxRoomSize),
+                1f,
+                Random.Range(MinRoomSize, MaxRoomSize)
+            );
+
+            if (i == 0)
+            {
+                CreateFirstRoom(newRoomSize);
+            }
+            else
+            {
+                CreateRoom(newRoomSize);
+            }
         }
     }
 
-    private void CreateRoom()
+    private void CreateFirstRoom(Vector3 size)
     {
-        Vector3 size = new Vector3(
-            Random.Range(MinRoomSize, MaxRoomSize),
-            1f,
-            Random.Range(MinRoomSize, MaxRoomSize)
-        );
-        Vector3 position = GetNextPosition(size);
+        GameObject clone = Instantiate(Room, Vector3.zero, Quaternion.identity, transform);
+        clone.transform.localScale = size;
+
+        Room newRoom = clone.GetComponent<Room>();
+        RoomList.Add(newRoom);
+    }
+
+    private void CreateRoom(Vector3 size)
+    {
+        Room baseRoom = RoomList[Random.Range(0, RoomList.Count)];
+        Vector3 position = GetNextPosition(baseRoom, size);
 
         GameObject clone = Instantiate(Room, position, Quaternion.identity, transform);
         clone.transform.localScale = size;
@@ -44,16 +61,9 @@ public class RoomManager : Singleton<RoomManager>
         RoomList.Add(newRoom);
     }
 
-    private Vector3 GetNextPosition(Vector3 newSize)
+    private Vector3 GetNextPosition(Room baseRoom, Vector3 newSize)
     {
-        if (RoomList.Count == 0)
-        {
-            return Vector3.zero;
-        }
-
-        Room baseRoom = RoomList[Random.Range(0, RoomList.Count)];
         AdjacentPositionDto baseOffset = baseRoom.GetRandomAdjacentRelativePosition();
-
         Vector3 newOffset = GenerateNewOffset(newSize, baseOffset);
 
         return baseRoom.transform.position + baseOffset.Point + newOffset;

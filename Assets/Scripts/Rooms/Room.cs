@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class AdjacentPositionDto
 {
@@ -8,9 +9,16 @@ public class AdjacentPositionDto
 
 public class Room : MonoBehaviour
 {
+    [SerializeField] private List<Room> Neighbors = new List<Room>();
+
     private float Height => transform.localScale.y;
     private float Length => transform.localScale.x;
     private float Width => transform.localScale.z;
+
+    public void AddNeighbor(Room parentRoom)
+    {
+        Neighbors.Add(parentRoom);
+    }
 
     public AdjacentPositionDto GetRandomAdjacentRelativePosition()
     {
