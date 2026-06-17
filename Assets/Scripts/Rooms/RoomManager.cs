@@ -21,7 +21,7 @@ public class RoomManager : Singleton<RoomManager>
 
     private void CreateRooms()
     {
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < 4; i++)
         {
             Vector3 newRoomSize = new Vector3(
                 Random.Range(MinRoomSize, MaxRoomSize),

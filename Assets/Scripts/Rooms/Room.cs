@@ -26,23 +26,25 @@ public class Room : MonoBehaviour
 {
     [SerializeField] private List<Neighbor> Neighbors = new List<Neighbor>();
 
-    private float Length => transform.localScale.x;
-    private float Width => transform.localScale.z;
+    public float PositionX => transform.position.x;
+    public float PositionZ => transform.position.z;
+    public float Length => transform.localScale.x;
+    public float Width => transform.localScale.z;
 
     public void AddNeighbor(Room parentRoom)
     {
-        float xDiff = Mathf.Abs(parentRoom.transform.position.x - transform.position.x);
-        float combinedHalfLengths = parentRoom.transform.localScale.x + transform.localScale.x;
+        float xDiff = Mathf.Abs(parentRoom.PositionX - PositionX);
+        float combinedHalfLengths = (parentRoom.Length + Length) / 2f;
 
         Side sharedEdge;
         if (Mathf.Abs(xDiff - combinedHalfLengths) < Constants.ZeroThreshold)
         {
-            bool parentIsGreater = parentRoom.transform.position.x > transform.position.x;
+            bool parentIsGreater = parentRoom.PositionX > PositionX;
             sharedEdge = parentIsGreater ? Side.Right : Side.Left;
         }
         else
         {
-            bool parentIsGreater = parentRoom.transform.position.z > transform.position.z;
+            bool parentIsGreater = parentRoom.PositionZ > PositionZ;
             sharedEdge = parentIsGreater ? Side.Top : Side.Bottom;
         }
 
