@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 public enum Side
 {
@@ -80,5 +81,61 @@ public class Room : MonoBehaviour
             Point = new Vector3(x, 0f, z),
             IsHorizontalEdge = staticHorizontal
         };
+    }
+
+    private List<(float, float)> GetEdgeAvailability(Side edge)
+    {
+        bool isHorizontalEdge = edge == Side.Left || edge == Side.Right;
+
+        float halfTotal = isHorizontalEdge ? Width / 2f : Length / 2f;
+        float center = isHorizontalEdge ? PositionZ : PositionX;
+
+        List<(float min, float max)> availableSpots = new List<(float, float)>()
+        {
+            (center - halfTotal, center + halfTotal)
+        };
+
+
+        foreach (Neighbor neighbor in Neighbors.Where(n => n.SharedEdge == edge))
+        {
+            float neighborHalfTotal = isHorizontalEdge ? neighbor.Room.Width / 2f : neighbor.Room.Length / 2f;
+            float neighborCenter = isHorizontalEdge ? neighbor.Room.PositionZ : neighbor.Room.PositionX;
+
+            float min = neighborCenter - neighborHalfTotal;
+            float max = neighborCenter + neighborHalfTotal;
+
+            foreach ((float min, float max) availableSpot in availableSpots.ToList())
+            {
+                if ((min > availableSpot.max) || (max < availableSpot.min)){
+                    continue;
+                }
+
+                int currentIndex = availableSpots.IndexOf(availableSpot);
+
+                if ((min < availableSpot.min) && (max > availableSpot.max))
+                {
+                    availableSpots.RemoveAt(currentIndex);
+                }
+
+                if ((min > availableSpot.min) && (max < availableSpot.max))
+                {
+                    List<(float, float)> newSpots = new List<(float, float)>()
+                    {
+                        (availableSpot.min, min),
+                        (max, availableSpot.max)
+                    };
+
+                    availableSpots.RemoveAt(currentIndex);
+                    availableSpots.InsertRange(currentIndex, newSpots);
+                    continue;
+                }
+
+                float newMin = max < availableSpot.max ? max : availableSpot.min;
+                float newMax = min > availableSpot.min ? min : availableSpot.max;
+                availableSpots[currentIndex] = (newMin, newMax);
+            }
+        }
+
+        return availableSpots;
     }
 }
