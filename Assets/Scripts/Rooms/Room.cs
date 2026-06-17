@@ -1,23 +1,56 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+public enum Side
+{
+    Left,
+    Right,
+    Top,
+    Bottom
+}
+
 public class AdjacentPositionDto
 {
     public Vector3 Point { get; set; }
     public bool IsHorizontalEdge { get; set; }
 }
 
+[System.Serializable]
+public class Neighbor
+{
+    public Room Room;
+    public Side SharedEdge;
+}
+
 public class Room : MonoBehaviour
 {
-    [SerializeField] private List<Room> Neighbors = new List<Room>();
+    [SerializeField] private List<Neighbor> Neighbors = new List<Neighbor>();
 
-    private float Height => transform.localScale.y;
     private float Length => transform.localScale.x;
     private float Width => transform.localScale.z;
 
     public void AddNeighbor(Room parentRoom)
     {
-        Neighbors.Add(parentRoom);
+        float xDiff = Mathf.Abs(parentRoom.transform.position.x - transform.position.x);
+        float combinedHalfLengths = parentRoom.transform.localScale.x + transform.localScale.x;
+
+        Side sharedEdge;
+        if (Mathf.Abs(xDiff - combinedHalfLengths) < Constants.ZeroThreshold)
+        {
+            bool parentIsGreater = parentRoom.transform.position.x > transform.position.x;
+            sharedEdge = parentIsGreater ? Side.Right : Side.Left;
+        }
+        else
+        {
+            bool parentIsGreater = parentRoom.transform.position.z > transform.position.z;
+            sharedEdge = parentIsGreater ? Side.Top : Side.Bottom;
+        }
+
+        Neighbors.Add(new Neighbor()
+        {
+            Room = parentRoom,
+            SharedEdge = sharedEdge,
+        });
     }
 
     public AdjacentPositionDto GetRandomAdjacentRelativePosition()

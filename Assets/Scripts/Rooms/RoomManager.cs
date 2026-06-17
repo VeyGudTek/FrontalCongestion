@@ -59,6 +59,9 @@ public class RoomManager : Singleton<RoomManager>
 
         Room newRoom = clone.GetComponent<Room>();
         RoomList.Add(newRoom);
+
+        newRoom.AddNeighbor(baseRoom);
+        baseRoom.AddNeighbor(newRoom);
     }
 
     private Vector3 GetNextPosition(Room baseRoom, Vector3 newSize)
