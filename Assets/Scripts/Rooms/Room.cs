@@ -13,7 +13,7 @@ public enum Side
 public class AdjacentPositionDto
 {
     public Vector3 Point { get; set; }
-    public bool IsHorizontalEdge { get; set; }
+    public Side Side { get; set; }
 }
 
 [System.Serializable]
@@ -28,6 +28,11 @@ public class Line
 {
     public Line(float start, float end)
     {
+        if (start > end)
+        {
+            throw new System.InvalidOperationException("Line start shouldn't be greater than line end.");
+        }
+
         Start = start;
         End = end;
     }
@@ -46,12 +51,18 @@ public class Neighbor
 public class Room : MonoBehaviour
 {
     [SerializeField] private List<Neighbor> Neighbors = new List<Neighbor>();
-    [SerializeField] private List<EdgeAvailabilityDto> AvailableEdges = new List<EdgeAvailabilityDto>();
+    [SerializeField] private List<EdgeAvailabilityDto> Edges = new List<EdgeAvailabilityDto>();
+    [SerializeField] private GameObject Debug;
 
     public float PositionX => transform.position.x;
     public float PositionZ => transform.position.z;
     public float Length => transform.localScale.x;
     public float Width => transform.localScale.z;
+
+    private void Awake()
+    {
+        SetEdgeAvailability();
+    }
 
     public void AddNeighbor(Room parentRoom)
     {
@@ -79,41 +90,77 @@ public class Room : MonoBehaviour
         SetEdgeAvailability();
     }
 
-    public AdjacentPositionDto GetRandomAdjacentRelativePosition()
+    public AdjacentPositionDto GetRandomAdjacentPosition()
     {
-        bool staticHorizontal = Random.value > .5f;
+        float totalAvailableEdgeDistance = 0f;
+        List<(Side, float)> sideToDistance = new List<(Side, float)>();
 
-        float staticOffset = staticHorizontal ? Length / 2f : Width / 2f;
-        float dynamicOffset = staticHorizontal ? 
-            Random.Range(0f, (Width  / 2f) - Constants.MinDoorWidth): 
-            Random.Range(0f, (Length / 2f) - Constants.MinDoorWidth);
-
-        float x = staticHorizontal ? staticOffset : dynamicOffset;
-        float z = staticHorizontal ? dynamicOffset : staticOffset;
-
-        if (Random.value > .5f)
+        foreach (EdgeAvailabilityDto dto in Edges)
         {
-            x = -x;
-        }
-        if (Random.value > .5f)
-        {
-            z = -z;
+            float edgeTotal = 0f;
+
+            foreach(Line line in dto.AvailableEdges)
+            {
+                edgeTotal += line.End - line.Start;
+            }
+
+            sideToDistance.Add((dto.Side, edgeTotal));
+            totalAvailableEdgeDistance += edgeTotal;
         }
 
-        return new AdjacentPositionDto(){
-            Point = new Vector3(x, 0f, z),
-            IsHorizontalEdge = staticHorizontal
+        float seed = Random.Range(0f, totalAvailableEdgeDistance);
+        foreach((Side side, float distance) in sideToDistance)
+        {
+            seed -= distance;
+            if (seed < 0f)
+            {
+                return GenerateAdjacentPositionDto(side, Random.Range(0f, distance)); 
+            }
+        }
+
+        throw new System.InvalidOperationException("Generated a Seed beyond the available distance.");
+    }
+
+    //FIX DYNAMIC GENERATION. USE EXISTING "LINE" DTOS
+    private AdjacentPositionDto GenerateAdjacentPositionDto(Side side, float distanceFromStart)
+    {
+        bool isHorizontalSide = side == Side.Left || side == Side.Right;
+        bool flipStatic = side == Side.Left || side == Side.Bottom;
+        float dynamicPoint;
+        float staticPoint;
+
+        if (isHorizontalSide)
+        {
+            staticPoint = flipStatic ? PositionX - (Length / 2f) : PositionX + (Length / 2f);
+            dynamicPoint = PositionZ - (Width / 2f) + distanceFromStart;
+        }
+        else
+        {
+            staticPoint = flipStatic ? PositionZ - (Width / 2f) : PositionZ + (Width / 2f);
+            dynamicPoint = PositionX - (Length / 2f) + distanceFromStart;
+        }
+
+        float x = isHorizontalSide ? staticPoint : dynamicPoint;
+        float z = isHorizontalSide ? dynamicPoint : staticPoint;
+
+        Vector3 point = new Vector3(x, 0f, z);
+
+        Instantiate(Debug, point, Quaternion.identity, transform);
+        return new AdjacentPositionDto()
+        {
+            Point = point,
+            Side = side
         };
     }
 
     private void SetEdgeAvailability()
     {
-        AvailableEdges = new List<EdgeAvailabilityDto>();
+        Edges = new List<EdgeAvailabilityDto>();
 
-        AvailableEdges.Add(new EdgeAvailabilityDto() { Side = Side.Left, AvailableEdges = GetEdgeAvailability(Side.Left) });
-        AvailableEdges.Add(new EdgeAvailabilityDto() { Side = Side.Right, AvailableEdges = GetEdgeAvailability(Side.Right) });
-        AvailableEdges.Add(new EdgeAvailabilityDto() { Side = Side.Top, AvailableEdges = GetEdgeAvailability(Side.Top) });
-        AvailableEdges.Add(new EdgeAvailabilityDto() { Side = Side.Bottom, AvailableEdges = GetEdgeAvailability(Side.Bottom) });
+        Edges.Add(new EdgeAvailabilityDto() { Side = Side.Left, AvailableEdges = GetEdgeAvailability(Side.Left) });
+        Edges.Add(new EdgeAvailabilityDto() { Side = Side.Right, AvailableEdges = GetEdgeAvailability(Side.Right) });
+        Edges.Add(new EdgeAvailabilityDto() { Side = Side.Top, AvailableEdges = GetEdgeAvailability(Side.Top) });
+        Edges.Add(new EdgeAvailabilityDto() { Side = Side.Bottom, AvailableEdges = GetEdgeAvailability(Side.Bottom) });
     }
 
     private List<Line> GetEdgeAvailability(Side edge)

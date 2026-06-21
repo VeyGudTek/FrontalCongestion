@@ -125,3 +125,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bce2591c28f46b440aac7d92033d0ce6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Room
+  Neighbors: []
+  Edges: []
+  Debug: {fileID: 5945051555502425950, guid: 25aff4016846b9747a723634745ea871, type: 3}

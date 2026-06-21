@@ -21,7 +21,7 @@ public class RoomManager : Singleton<RoomManager>
 
     private void CreateRooms()
     {
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < 5; i++)
         {
             Vector3 newRoomSize = new Vector3(
                 Random.Range(MinRoomSize, MaxRoomSize),
@@ -66,34 +66,32 @@ public class RoomManager : Singleton<RoomManager>
 
     private Vector3 GetNextPosition(Room baseRoom, Vector3 newSize)
     {
-        AdjacentPositionDto baseOffset = baseRoom.GetRandomAdjacentRelativePosition();
-        Vector3 newOffset = GenerateNewOffset(newSize, baseOffset);
+        AdjacentPositionDto baseOffset = baseRoom.GetRandomAdjacentPosition();
+        Vector3 newOffset = GenerateNewRoomOffset(newSize, baseOffset);
 
-        return baseRoom.transform.position + baseOffset.Point + newOffset;
+        return baseOffset.Point + newOffset;
     }
 
-    private Vector3 GenerateNewOffset(Vector3 size, AdjacentPositionDto baseOffset)
+    private Vector3 GenerateNewRoomOffset(Vector3 newRoomSize, AdjacentPositionDto baseOffset)
     {
-        float staticOffset = baseOffset.IsHorizontalEdge ? size.x / 2f : size.z / 2f;
-        float dynamicOffset = baseOffset.IsHorizontalEdge ?
-            Random.Range(0f, (size.z / 2f) - Constants.MinDoorWidth):
-            Random.Range(0f, (size.x / 2f) - Constants.MinDoorWidth);
+        bool isHorizontalEdge = baseOffset.Side == Side.Left || baseOffset.Side == Side.Right;
+
+        float staticOffset = isHorizontalEdge ? newRoomSize.x / 2f : newRoomSize.z / 2f;
+        float dynamicOffset = isHorizontalEdge ?
+            Random.Range(0f, (newRoomSize.z / 2f) - Constants.MinDoorWidth):
+            Random.Range(0f, (newRoomSize.x / 2f) - Constants.MinDoorWidth);
 
         if (Random.value < .5f)
         {
             dynamicOffset = -dynamicOffset;
         }
-        if (baseOffset.Point.x < 0f && baseOffset.IsHorizontalEdge)
-        {
-            staticOffset = -staticOffset;
-        }
-        if (baseOffset.Point.z < 0f && !baseOffset.IsHorizontalEdge)
+        if (baseOffset.Side == Side.Left || baseOffset.Side == Side.Bottom)
         {
             staticOffset = -staticOffset;
         }
 
-        float x = baseOffset.IsHorizontalEdge ? staticOffset : dynamicOffset;
-        float z = baseOffset.IsHorizontalEdge ? dynamicOffset : staticOffset;
+        float x = isHorizontalEdge ? staticOffset : dynamicOffset;
+        float z = isHorizontalEdge ? dynamicOffset : staticOffset;
 
         return new Vector3(x, 0f, z);
     }
