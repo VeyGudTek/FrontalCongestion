@@ -17,6 +17,26 @@ public class AdjacentPositionDto
 }
 
 [System.Serializable]
+public class EdgeAvailabilityDto
+{
+    public Side Side;
+    public List<Line> AvailableEdges;
+}
+
+[System.Serializable]
+public class Line
+{
+    public Line(float start, float end)
+    {
+        Start = start;
+        End = end;
+    }
+
+    public float Start;
+    public float End;
+}
+
+[System.Serializable]
 public class Neighbor
 {
     public Room Room;
@@ -26,6 +46,7 @@ public class Neighbor
 public class Room : MonoBehaviour
 {
     [SerializeField] private List<Neighbor> Neighbors = new List<Neighbor>();
+    [SerializeField] private List<EdgeAvailabilityDto> AvailableEdges = new List<EdgeAvailabilityDto>();
 
     public float PositionX => transform.position.x;
     public float PositionZ => transform.position.z;
@@ -54,6 +75,8 @@ public class Room : MonoBehaviour
             Room = parentRoom,
             SharedEdge = sharedEdge,
         });
+
+        SetEdgeAvailability();
     }
 
     public AdjacentPositionDto GetRandomAdjacentRelativePosition()
@@ -83,16 +106,26 @@ public class Room : MonoBehaviour
         };
     }
 
-    private List<(float, float)> GetEdgeAvailability(Side edge)
+    private void SetEdgeAvailability()
+    {
+        AvailableEdges = new List<EdgeAvailabilityDto>();
+
+        AvailableEdges.Add(new EdgeAvailabilityDto() { Side = Side.Left, AvailableEdges = GetEdgeAvailability(Side.Left) });
+        AvailableEdges.Add(new EdgeAvailabilityDto() { Side = Side.Right, AvailableEdges = GetEdgeAvailability(Side.Right) });
+        AvailableEdges.Add(new EdgeAvailabilityDto() { Side = Side.Top, AvailableEdges = GetEdgeAvailability(Side.Top) });
+        AvailableEdges.Add(new EdgeAvailabilityDto() { Side = Side.Bottom, AvailableEdges = GetEdgeAvailability(Side.Bottom) });
+    }
+
+    private List<Line> GetEdgeAvailability(Side edge)
     {
         bool isHorizontalEdge = edge == Side.Left || edge == Side.Right;
 
         float halfTotal = isHorizontalEdge ? Width / 2f : Length / 2f;
         float center = isHorizontalEdge ? PositionZ : PositionX;
 
-        List<(float min, float max)> availableSpots = new List<(float, float)>()
+        List<Line> availableSpots = new List<Line>()
         {
-            (center - halfTotal, center + halfTotal)
+            new Line(center - halfTotal, center + halfTotal)
         };
 
 
@@ -104,25 +137,26 @@ public class Room : MonoBehaviour
             float min = neighborCenter - neighborHalfTotal;
             float max = neighborCenter + neighborHalfTotal;
 
-            foreach ((float min, float max) availableSpot in availableSpots.ToList())
+            foreach (Line availableSpot in availableSpots.ToList())
             {
-                if ((min > availableSpot.max) || (max < availableSpot.min)){
+                if ((min > availableSpot.End) || (max < availableSpot.Start)){
                     continue;
                 }
 
                 int currentIndex = availableSpots.IndexOf(availableSpot);
 
-                if ((min < availableSpot.min) && (max > availableSpot.max))
+                if ((min < availableSpot.Start) && (max > availableSpot.End))
                 {
                     availableSpots.RemoveAt(currentIndex);
+                    continue;
                 }
 
-                if ((min > availableSpot.min) && (max < availableSpot.max))
+                if ((min > availableSpot.Start) && (max < availableSpot.End))
                 {
-                    List<(float, float)> newSpots = new List<(float, float)>()
+                    List<Line> newSpots = new List<Line>()
                     {
-                        (availableSpot.min, min),
-                        (max, availableSpot.max)
+                        new Line(availableSpot.Start, min),
+                        new Line(max, availableSpot.End)
                     };
 
                     availableSpots.RemoveAt(currentIndex);
@@ -130,9 +164,8 @@ public class Room : MonoBehaviour
                     continue;
                 }
 
-                float newMin = max < availableSpot.max ? max : availableSpot.min;
-                float newMax = min > availableSpot.min ? min : availableSpot.max;
-                availableSpots[currentIndex] = (newMin, newMax);
+                availableSpots[currentIndex].Start = max < availableSpot.End ? max : availableSpot.Start;
+                availableSpots[currentIndex].End = min > availableSpot.Start ? min : availableSpot.End;
             }
         }
 
