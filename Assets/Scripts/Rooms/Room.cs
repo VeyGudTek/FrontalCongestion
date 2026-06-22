@@ -114,31 +114,32 @@ public class Room : MonoBehaviour
             seed -= distance;
             if (seed < 0f)
             {
-                return GenerateAdjacentPositionDto(side, Random.Range(0f, distance)); 
+                return GenerateAdjacentPositionDto(side); 
             }
         }
 
         throw new System.InvalidOperationException("Generated a Seed beyond the available distance.");
     }
 
-    //FIX DYNAMIC GENERATION. USE EXISTING "LINE" DTOS
-    private AdjacentPositionDto GenerateAdjacentPositionDto(Side side, float distanceFromStart)
+    private AdjacentPositionDto GenerateAdjacentPositionDto(Side side)
     {
         bool isHorizontalSide = side == Side.Left || side == Side.Right;
         bool flipStatic = side == Side.Left || side == Side.Bottom;
-        float dynamicPoint;
         float staticPoint;
 
         if (isHorizontalSide)
         {
             staticPoint = flipStatic ? PositionX - (Length / 2f) : PositionX + (Length / 2f);
-            dynamicPoint = PositionZ - (Width / 2f) + distanceFromStart;
         }
         else
         {
             staticPoint = flipStatic ? PositionZ - (Width / 2f) : PositionZ + (Width / 2f);
-            dynamicPoint = PositionX - (Length / 2f) + distanceFromStart;
         }
+
+        EdgeAvailabilityDto edge = Edges.Where(e => e.Side == side).First();
+        int lineIndex = Random.Range(0, edge.AvailableEdges.Count);
+        Line line = edge.AvailableEdges[lineIndex];
+        float dynamicPoint = Random.Range(line.Start, line.End);
 
         float x = isHorizontalSide ? staticPoint : dynamicPoint;
         float z = isHorizontalSide ? dynamicPoint : staticPoint;
