@@ -50,9 +50,13 @@ public class Neighbor
 
 public class Room : MonoBehaviour
 {
+    const float TempRoomHeight = 10f;
+
     [SerializeField] private List<Neighbor> Neighbors = new List<Neighbor>();
     [SerializeField] private List<EdgeAvailabilityDto> Edges = new List<EdgeAvailabilityDto>();
-    [SerializeField] private GameObject Debug;
+    [SerializeField] private List<GameObject> Walls = new List<GameObject>();
+    [SerializeField] private GameObject Wall;
+    [SerializeField] private GameObject DebugObject;
 
     public float PositionX => transform.position.x;
     public float PositionZ => transform.position.z;
@@ -88,6 +92,35 @@ public class Room : MonoBehaviour
         });
 
         SetEdgeAvailability();
+    }
+
+    //DoorLocation will be used later
+    public void GenerateWalls(AdjacentPositionDto doorLocation)
+    {
+        foreach (GameObject wall in Walls)
+        {
+            Destroy(wall);
+        }
+        Walls.Clear();
+
+        GenerateWall(new Vector3(PositionX - (Length / 2f), TempRoomHeight / 2f, PositionZ), new Vector3(Constants.WallThickness, TempRoomHeight, Width));
+        GenerateWall(new Vector3(PositionX + (Length / 2f), TempRoomHeight / 2f, PositionZ), new Vector3(Constants.WallThickness, TempRoomHeight, Width));
+        GenerateWall(new Vector3(PositionX, TempRoomHeight / 2f, PositionZ - (Width / 2f)), new Vector3(Length, TempRoomHeight, Constants.WallThickness));
+        GenerateWall(new Vector3(PositionX, TempRoomHeight / 2f, PositionZ + (Width / 2f)), new Vector3(Length, TempRoomHeight, Constants.WallThickness));
+    }
+
+    private void GenerateWall(Vector3 position, Vector3 size)
+    {
+        GameObject wall = Instantiate(Wall, position, Quaternion.identity, transform);
+
+        Vector3 roomScale = transform.lossyScale;
+        wall.transform.localScale = new Vector3(
+            size.x / roomScale.x,
+            size.y / roomScale.y,
+            size.z / roomScale.z
+        );
+
+        Walls.Add(wall);
     }
 
     public AdjacentPositionDto GetRandomAdjacentPosition()
@@ -146,7 +179,7 @@ public class Room : MonoBehaviour
 
         Vector3 point = new Vector3(x, 0f, z);
 
-        Instantiate(Debug, point, Quaternion.identity, transform);
+        Instantiate(DebugObject, point, Quaternion.identity, transform);
         return new AdjacentPositionDto()
         {
             Point = point,

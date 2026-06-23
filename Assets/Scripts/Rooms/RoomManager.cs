@@ -21,38 +21,40 @@ public class RoomManager : Singleton<RoomManager>
 
     private void CreateRooms()
     {
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 2; i++)
         {
-            Vector3 newRoomSize = new Vector3(
-                Random.Range(MinRoomSize, MaxRoomSize),
-                1f,
-                Random.Range(MinRoomSize, MaxRoomSize)
-            );
-
             if (i == 0)
             {
-                CreateFirstRoom(newRoomSize);
+                CreateFirstRoom();
             }
             else
             {
-                CreateRoom(newRoomSize);
+                CreateRoom();
             }
         }
     }
 
-    private void CreateFirstRoom(Vector3 size)
+    private void CreateFirstRoom()
     {
         GameObject clone = Instantiate(Room, Vector3.zero, Quaternion.identity, transform);
-        clone.transform.localScale = size;
+
+        Vector3 newRoomSize = new Vector3(
+            Random.Range(MinRoomSize, MaxRoomSize),
+            1f,
+            Random.Range(MinRoomSize, MaxRoomSize)
+        );
+        clone.transform.localScale = newRoomSize;
 
         Room newRoom = clone.GetComponent<Room>();
         RoomList.Add(newRoom);
     }
 
-    private void CreateRoom(Vector3 size)
+    private void CreateRoom()
     {
         Room baseRoom = RoomList[Random.Range(0, RoomList.Count)];
-        Vector3 position = GetNextPosition(baseRoom, size);
+
+        AdjacentPositionDto baseAdjacentPoint = baseRoom.GetRandomAdjacentPosition();
+        (Vector3 position, Vector3 size) = GetNextPositionAndSize(baseAdjacentPoint);
 
         GameObject clone = Instantiate(Room, position, Quaternion.identity, transform);
         clone.transform.localScale = size;
@@ -61,15 +63,27 @@ public class RoomManager : Singleton<RoomManager>
         RoomList.Add(newRoom);
 
         newRoom.AddNeighbor(baseRoom);
+        newRoom.GenerateWalls(baseAdjacentPoint.GetFlippedSide());
         baseRoom.AddNeighbor(newRoom);
+        baseRoom.GenerateWalls(baseAdjacentPoint);
     }
 
-    private Vector3 GetNextPosition(Room baseRoom, Vector3 newSize)
+    private (Vector3, Vector3) GetNextPositionAndSize(AdjacentPositionDto baseAdjacentPoint)
     {
-        AdjacentPositionDto baseOffset = baseRoom.GetRandomAdjacentPosition();
-        Vector3 newOffset = GenerateNewRoomOffset(newSize, baseOffset);
+        Vector3 newSize = GenerateNewRoomSize();
+        Vector3 newOffset = GenerateNewRoomOffset(newSize, baseAdjacentPoint);
 
-        return baseOffset.Point + newOffset;
+        return (baseAdjacentPoint.Point + newOffset, newSize);
+    }
+
+    private Vector3 GenerateNewRoomSize()
+    {
+        Physics.SyncTransforms();
+        return new Vector3(
+            Random.Range(MinRoomSize, MaxRoomSize),
+            1f,
+            Random.Range(MinRoomSize, MaxRoomSize)
+        );
     }
 
     private Vector3 GenerateNewRoomOffset(Vector3 newRoomSize, AdjacentPositionDto baseOffset)
