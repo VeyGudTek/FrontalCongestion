@@ -1,6 +1,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public class RoomLimitationDto
+{
+    public float MaxNegativeSecant;
+    public float MaxPositiveSecant;
+    public Vector3 RoomSize;
+}
+
 public class RoomManager : Singleton<RoomManager>
 {
     private const float MaxRoomSize = 20f;
@@ -21,7 +28,7 @@ public class RoomManager : Singleton<RoomManager>
 
     private void CreateRooms()
     {
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < 4; i++)
         {
             if (i == 0)
             {
@@ -70,30 +77,76 @@ public class RoomManager : Singleton<RoomManager>
 
     private (Vector3, Vector3) GetNextPositionAndSize(AdjacentPositionDto baseAdjacentPoint)
     {
-        Vector3 newSize = GenerateNewRoomSize();
-        Vector3 newOffset = GenerateNewRoomOffset(newSize, baseAdjacentPoint);
+        RoomLimitationDto newRoomLimits = GenerateNewRoomSize(baseAdjacentPoint);
+        Vector3 newOffset = GenerateNewRoomOffset(newRoomLimits, baseAdjacentPoint);
 
-        return (baseAdjacentPoint.Point + newOffset, newSize);
+        return (baseAdjacentPoint.Point + newOffset, newRoomLimits.RoomSize);
     }
 
-    private Vector3 GenerateNewRoomSize()
+    private RoomLimitationDto GenerateNewRoomSize(AdjacentPositionDto baseAdjacentPoint)
     {
         Physics.SyncTransforms();
-        return new Vector3(
-            Random.Range(MinRoomSize, MaxRoomSize),
-            1f,
-            Random.Range(MinRoomSize, MaxRoomSize)
-        );
+
+        Vector3 direction = baseAdjacentPoint.Side.ToVector3();
+        Vector3 origin = baseAdjacentPoint.Point + (direction * Constants.WallThickness);
+        float maxRoomExtent;
+
+        if (Physics.Raycast(origin, direction, out RaycastHit hit, MaxRoomSize))
+        {
+            maxRoomExtent = (hit.point - baseAdjacentPoint.Point).magnitude;
+        }
+        else
+        {
+            maxRoomExtent = MaxRoomSize;
+        }
+
+        (float maxSecantNegative, float maxSecantPositive) = GetRoomSpan(origin, direction, baseAdjacentPoint.Side, maxRoomExtent);
+        float roomSpan = Random.Range(maxSecantNegative, maxSecantPositive);
+
+        return new RoomLimitationDto()
+        {
+            MaxNegativeSecant = maxSecantNegative,
+            MaxPositiveSecant = maxSecantPositive,
+            RoomSize = new Vector3(
+                baseAdjacentPoint.Side.IsHorizontalEdge() ? maxRoomExtent : roomSpan,
+                1f,
+                baseAdjacentPoint.Side.IsHorizontalEdge() ? roomSpan : maxRoomExtent
+            )
+        };
     }
 
-    private Vector3 GenerateNewRoomOffset(Vector3 newRoomSize, AdjacentPositionDto baseOffset)
+    private (float, float) GetRoomSpan(Vector3 origin, Vector3 direction, Side side, float maxRoomExtent)
+    {
+        float maxSecantNegative = MaxRoomSize;
+        float maxSecantPositive = MaxRoomSize;
+
+        for (float i = 0f; i < maxRoomExtent; i += MinRoomSize)
+        {
+            Vector3 secantOrigin = origin + (direction * i);
+            (Vector3 secantDirectionNegative, Vector3 secantDirectionPositive) = side.ToAdjacentVector3();
+
+            RaycastHit hit;
+            if (Physics.Raycast(secantOrigin, secantDirectionNegative, out hit, maxSecantNegative))
+            {
+                maxSecantNegative = hit.distance;
+            }
+            if (Physics.Raycast(secantOrigin, secantDirectionPositive, out hit, maxSecantNegative))
+            {
+                maxSecantNegative = hit.distance;
+            }
+        }
+
+        return (maxSecantNegative, maxSecantPositive);
+    }
+
+    private Vector3 GenerateNewRoomOffset(RoomLimitationDto newRoomLimits, AdjacentPositionDto baseOffset)
     {
         bool isHorizontalEdge = baseOffset.Side == Side.Left || baseOffset.Side == Side.Right;
 
-        float staticOffset = isHorizontalEdge ? newRoomSize.x / 2f : newRoomSize.z / 2f;
+        float staticOffset = isHorizontalEdge ? newRoomLimits.RoomSize.x / 2f : newRoomLimits.RoomSize.z / 2f;
         float dynamicOffset = isHorizontalEdge ?
-            Random.Range(0f, (newRoomSize.z / 2f) - Constants.MinDoorWidth):
-            Random.Range(0f, (newRoomSize.x / 2f) - Constants.MinDoorWidth);
+            Random.Range(0f, (newRoomLimits.RoomSize.z / 2f) - Constants.MinDoorWidth):
+            Random.Range(0f, (newRoomLimits.RoomSize.x / 2f) - Constants.MinDoorWidth);
 
         if (Random.value < .5f)
         {
