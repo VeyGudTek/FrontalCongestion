@@ -5,6 +5,7 @@ public class RoomGenerator : Singleton<RoomGenerator>
     [SerializeField]
     private GameObject AvailableSpaceManager;
 
+    [SerializeField]
     private AvailableSpaceManager RoomGenerationSpaceManager;
     const float PlayingFieldSize = 100f;
     const float PlayingFieldHeight = 50f;
