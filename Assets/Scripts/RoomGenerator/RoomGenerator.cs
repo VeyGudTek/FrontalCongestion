@@ -25,4 +25,17 @@ public class RoomGenerator : Singleton<RoomGenerator>
         RoomGenerationSpaceManager = spaceManagerObject.GetComponent<AvailableSpaceManager>();
         RoomGenerationSpaceManager.InitializeSpace(new Vector3(PlayingFieldSize, PlayingFieldHeight, PlayingFieldSize), Vector3.zero);
     }
+
+    private void Update()
+    {
+        if (InputManager.GetInstance().IsJump)
+        {
+            CarveSpace();
+        }
+    }
+
+    private void CarveSpace()
+    {
+        RoomGenerationSpaceManager.UpdateSpace();
+    }
 }
