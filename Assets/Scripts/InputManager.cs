@@ -5,7 +5,7 @@ public class InputManager : Singleton<InputManager>
     private GeneratedInputSystem inputSystem { get; set; }
     private void Awake()
     {
-        IntializeSingleton(this);
+        InitializeSingleton(this);
         inputSystem = new GeneratedInputSystem();
 
         Cursor.lockState = CursorLockMode.Locked;

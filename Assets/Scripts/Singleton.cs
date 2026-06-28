@@ -14,7 +14,7 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
         return Instance;
     }
 
-    protected void IntializeSingleton(T instance)
+    protected void InitializeSingleton(T instance)
     {
         if (Instance != null && Instance != instance)
         {
