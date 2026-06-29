@@ -34,26 +34,50 @@ public class AvailableSpace : MonoBehaviour
 
         float topOtherY = OtherVertices.Max(v => v.y);
         float topY = Vertices.Max(v => v.y);
-        float? bottomOfTopSlice = null;
+        Vector3? topSliceSize = null;
 
         if (topOtherY < topY)
         {
             (Vector3 position, Vector3 size) topSlice = CreateTopSlice(topOtherY);
 
-            bottomOfTopSlice = topSlice.position.y - topSlice.size.y / 2f;
+            topSliceSize = topSlice.size;
             newTransforms.Add(topSlice);
         }
 
         float bottomOtherY = OtherVertices.Min(v => v.y);
         float bottomY = Vertices.Min(v => v.y);
-        float? topOfBottomSlice = null;
+        Vector3? bottomSliceSize = null;
 
         if (bottomOtherY > bottomY)
         {
             (Vector3 position, Vector3 size) bottomSlice = CreateBottomSlice(bottomOtherY);
 
-            topOfBottomSlice = bottomSlice.position.y + bottomSlice.size.y / 2f;
+            bottomSliceSize = bottomSlice.size;
             newTransforms.Add(bottomSlice);
+        }
+
+        float leftOtherX = OtherVertices.Min(v => v.x);
+        float leftX = Vertices.Min(v => v.x);
+        Vector3? leftSliceSize = null;
+
+        if (leftOtherX > leftX)
+        {
+            (Vector3 position, Vector3 size) leftSlice = CreateLeftSlice(leftOtherX, topSliceSize, bottomSliceSize);
+
+            leftSliceSize = leftSlice.size;
+            newTransforms.Add(leftSlice);
+        }
+
+        float rightOtherX = OtherVertices.Max(v => v.x);
+        float rightX = Vertices.Max(v => v.x);
+        Vector3? rightSliceSize = null;
+
+        if (rightOtherX < rightX)
+        {
+            (Vector3 position, Vector3 size) rightSlice = CreateRightSlice(rightOtherX, topSliceSize, bottomSliceSize);
+
+            rightSliceSize = rightSlice.size;
+            newTransforms.Add(rightSlice);
         }
 
         return newTransforms;
@@ -96,5 +120,67 @@ public class AvailableSpace : MonoBehaviour
         );
 
         return ( newPosition, newSize );
+    }
+
+    private (Vector3 position, Vector3 size) CreateLeftSlice(float leftOtherX, Vector3? topSliceSize, Vector3? bottomSliceSize)
+    {
+        float height = GetHeight(topSliceSize, bottomSliceSize);
+        
+        float leftOfSpace = transform.position.x - (transform.localScale.x / 2f);
+        float bottomOfSpace = transform.position.y - (transform.localScale.y / 2f);
+        float bottomSliceHeight = bottomSliceSize.HasValue ? bottomSliceSize.Value.y : 0f;
+
+        Vector3 newSize = new Vector3(
+            leftOtherX - leftOfSpace,
+            height,
+            transform.localScale.z
+        );
+
+        Vector3 newPosition = new Vector3(
+            leftOfSpace + newSize.x / 2f,
+            bottomOfSpace + (height / 2f) + bottomSliceHeight,
+            transform.position.z
+        );
+
+        return ( newPosition, newSize );
+    }
+
+    private (Vector3 position, Vector3 size) CreateRightSlice(float rightOtherX, Vector3? topSliceSize, Vector3? bottomSliceSize)
+    {
+        float height = GetHeight(topSliceSize, bottomSliceSize);
+
+        float rightOfSpace = transform.position.x + (transform.localScale.x / 2f);
+        float bottomOfSpace = transform.position.y - (transform.localScale.y / 2f);
+        float bottomSliceHeight = bottomSliceSize.HasValue ? bottomSliceSize.Value.y : 0f;
+
+        Vector3 newSize = new Vector3(
+            rightOfSpace - rightOtherX,
+            height,
+            transform.localScale.z
+        );
+
+        Vector3 newPosition = new Vector3(
+            rightOfSpace - newSize.x / 2f,
+            bottomOfSpace + (height / 2f) + bottomSliceHeight,
+            transform.position.z
+        );
+
+        return (newPosition, newSize);
+    }
+
+    private float GetHeight(Vector3? topSliceSize, Vector3? bottomSliceSize)
+    {
+        float height = transform.localScale.y;
+
+        if (topSliceSize.HasValue)
+        {
+            height -= topSliceSize.Value.y;
+        }
+        if (bottomSliceSize.HasValue)
+        {
+            height -= bottomSliceSize.Value.y;
+        }
+
+        return height;
     }
 }
