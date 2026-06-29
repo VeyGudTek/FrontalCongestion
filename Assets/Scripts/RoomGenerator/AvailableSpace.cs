@@ -10,12 +10,17 @@ public class AvailableSpace : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!HasCollision)
+        if (!HasCollision && other.TryGetComponent<RoomCarving>(out _))
         {
             HasCollision = true;
             Vertices = transform.GetVertices();
             OtherVertices = other.transform.GetVertices();
         }
+    }
+
+    public void ResetCollisions()
+    {
+        HasCollision = false;
     }
 
     public List<(Vector3 position, Vector3 size)> GetNewSpaceTransforms()
@@ -78,6 +83,26 @@ public class AvailableSpace : MonoBehaviour
 
             rightSliceSize = rightSlice.size;
             newTransforms.Add(rightSlice);
+        }
+
+        float frontOtherZ = OtherVertices.Max(v => v.z);
+        float frontZ = Vertices.Max(v => v.z);
+        
+        if (frontOtherZ < frontZ)
+        {
+            (Vector3 position, Vector3 size) frontSlice = CreateFrontSlice(frontOtherZ, topSliceSize, bottomSliceSize, leftSliceSize, rightSliceSize);
+
+            newTransforms.Add(frontSlice);
+        }
+
+        float backOtherZ = OtherVertices.Min(v => v.z);
+        float backZ = Vertices.Min(v => v.z);
+
+        if (backOtherZ > backZ)
+        {
+            (Vector3 position, Vector3 size) backSlice = CreateBackSlice(backOtherZ, topSliceSize, bottomSliceSize, leftSliceSize, rightSliceSize);
+
+            newTransforms.Add(backSlice);
         }
 
         return newTransforms;
@@ -168,6 +193,60 @@ public class AvailableSpace : MonoBehaviour
         return (newPosition, newSize);
     }
 
+    private (Vector3 position, Vector3 size) CreateFrontSlice(float frontOtherX, Vector3? topSliceSize, Vector3? bottomSliceSize, Vector3? leftSliceSize, Vector3? rightSliceSize)
+    {
+        float height = GetHeight(topSliceSize, bottomSliceSize);
+        float length = GetLength(leftSliceSize, rightSliceSize);
+
+        float frontOfSpace = transform.position.z + (transform.localScale.z / 2f);
+
+        float leftOfSpace = transform.position.x - (transform.localScale.x / 2f);
+        float leftSliceLength = leftSliceSize.HasValue ? leftSliceSize.Value.x : 0f;
+        float bottomOfSpace = transform.position.y - (transform.localScale.y / 2f);
+        float bottomSliceHeight = bottomSliceSize.HasValue ? bottomSliceSize.Value.y : 0f;
+
+        Vector3 newSize = new Vector3(
+            length,
+            height,
+            frontOfSpace - frontOtherX
+        );
+
+        Vector3 newPosition = new Vector3(
+            leftOfSpace + leftSliceLength + (length / 2f),
+            bottomOfSpace + bottomSliceHeight + (height / 2f),
+            frontOfSpace - (newSize.z / 2f)
+        );
+
+        return (newPosition, newSize);
+    }
+
+    private (Vector3 position, Vector3 size) CreateBackSlice(float backOtherX, Vector3? topSliceSize, Vector3? bottomSliceSize, Vector3? leftSliceSize, Vector3? rightSliceSize)
+    {
+        float height = GetHeight(topSliceSize, bottomSliceSize);
+        float length = GetLength(leftSliceSize, rightSliceSize);
+
+        float backOfSpace = transform.position.z - (transform.localScale.z / 2f);
+
+        float leftOfSpace = transform.position.x - (transform.localScale.x / 2f);
+        float leftSliceLength = leftSliceSize.HasValue ? leftSliceSize.Value.x : 0f;
+        float bottomOfSpace = transform.position.y - (transform.localScale.y / 2f);
+        float bottomSliceHeight = bottomSliceSize.HasValue ? bottomSliceSize.Value.y : 0f;
+
+        Vector3 newSize = new Vector3(
+            length,
+            height,
+            backOtherX - backOfSpace
+        );
+
+        Vector3 newPosition = new Vector3(
+            leftOfSpace + leftSliceLength + (length / 2f),
+            bottomOfSpace + bottomSliceHeight + (height / 2f),
+            backOfSpace + (newSize.z / 2f)
+        );
+
+        return (newPosition, newSize);
+    }
+
     private float GetHeight(Vector3? topSliceSize, Vector3? bottomSliceSize)
     {
         float height = transform.localScale.y;
@@ -182,5 +261,21 @@ public class AvailableSpace : MonoBehaviour
         }
 
         return height;
+    }
+
+    private float GetLength(Vector3? leftSliceSize, Vector3? rightSliceSize)
+    {
+        float length = transform.localScale.x;
+
+        if (leftSliceSize.HasValue)
+        {
+            length -= leftSliceSize.Value.x;
+        }
+        if (rightSliceSize.HasValue)
+        {
+            length -= rightSliceSize.Value.x;
+        }
+
+        return length;
     }
 }

@@ -19,7 +19,15 @@ public class AvailableSpaceManager : MonoBehaviour
         AvailableSpaces.Add(newSpaceObject.GetComponent<AvailableSpace>());
     }
 
-    public void UpdateSpace()
+    public void ResetSpaces()
+    {
+        foreach (AvailableSpace space in AvailableSpaces)
+        {
+            space.ResetCollisions();
+        }
+    }
+
+    public void CarveSpaces()
     {
         List<GameObject> oldObjects = AvailableSpaces.Select(s => s.gameObject).ToList();
         List<AvailableSpace> newSpaces = new List<AvailableSpace>();

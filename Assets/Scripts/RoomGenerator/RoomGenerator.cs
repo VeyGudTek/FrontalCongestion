@@ -2,13 +2,25 @@ using UnityEngine;
 
 public class RoomGenerator : Singleton<RoomGenerator>
 {
+    [Header("Prefabs")]
     [SerializeField]
     private GameObject AvailableSpaceManager;
+    [SerializeField] 
+    private GameObject RoomCarvingPrefab;
 
+    [Header("Instances")]
     [SerializeField]
     private AvailableSpaceManager RoomGenerationSpaceManager;
+    [SerializeField]
+    private GameObject RoomCarvingInstance;
+
     const float PlayingFieldSize = 100f;
     const float PlayingFieldHeight = 50f;
+
+    const float MaxRoomSize = 10f;
+    const float MinRoomSize = 5f;
+    const float MaxRoomHeight = 5f;
+    const float MinRoomHeight = 2.5f;
 
     private void Awake()
     {
@@ -37,6 +49,40 @@ public class RoomGenerator : Singleton<RoomGenerator>
 
     private void CarveSpace()
     {
-        RoomGenerationSpaceManager.UpdateSpace();
+        if (RoomCarvingInstance == null)
+        {
+            RoomCarvingInstance = Instantiate(RoomCarvingPrefab, GetRandomPosition(), Quaternion.identity);
+            RoomCarvingInstance.transform.localScale = GetRandomSize();
+            RoomCarvingInstance.transform.SetParent(transform);
+
+            return;
+        }
+        else
+        {
+            RoomGenerationSpaceManager.CarveSpaces();
+
+            Destroy(RoomCarvingInstance);
+            RoomCarvingInstance = null;
+
+            RoomGenerationSpaceManager.ResetSpaces();
+        }
+    }
+
+    private Vector3 GetRandomPosition()
+    {
+        return new Vector3(
+            Random.Range(-PlayingFieldSize / 2f, PlayingFieldSize / 2f),
+            Random.Range(-PlayingFieldHeight / 2f, PlayingFieldHeight / 2f),
+            Random.Range(-PlayingFieldSize / 2f, PlayingFieldSize / 2f)
+        );
+    }
+
+    private Vector3 GetRandomSize()
+    {
+        return new Vector3(
+            Random.Range(MinRoomSize, MaxRoomSize),
+            Random.Range(MinRoomHeight, MaxRoomHeight),
+            Random.Range(MinRoomSize, MaxRoomSize)
+        );
     }
 }
