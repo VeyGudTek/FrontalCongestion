@@ -45,4 +45,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UsedSpaceManager
   UsedSpacePrefab: {fileID: 2962169079110809223, guid: 3b527646f4b4989468465b9b2c796077, type: 3}
+  UsedSpaceCheckerPrefab: {fileID: 7247311390781564146, guid: 9ad17cfa709ad5346a8fdaade47e0cb6, type: 3}
+  UsedSpaceCheckerInstance: {fileID: 0}
   UsedSpaces: []

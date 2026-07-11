@@ -3,6 +3,36 @@ using UnityEngine;
 
 public static class TransformExtensions
 {
+    public static float GetTopBound(this Transform transform)
+    {
+        return transform.position.y + transform.localScale.y / 2f;
+    }
+
+    public static float GetBottomBound(this Transform transform)
+    {
+        return transform.position.y - transform.localScale.y / 2f;
+    }
+
+    public static float GetRightBound(this Transform transform)
+    {
+        return transform.position.x + transform.localScale.x / 2f;
+    }
+
+    public static float GetLeftBound(this Transform transform)
+    {
+        return transform.position.x - transform.localScale.x / 2f;
+    }
+
+    public static float GetForwardBound(this Transform transform)
+    {
+        return transform.position.z + transform.localScale.z / 2f;
+    }
+
+    public static float GetBackBound(this Transform transform)
+    {
+        return transform.position.z - transform.localScale.z / 2f;
+    }
+
     public static List<Vector3> GetVertices(this Transform transform)
     {
         Vector3 size = transform.localScale;

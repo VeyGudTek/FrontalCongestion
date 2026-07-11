@@ -5,6 +5,7 @@ TagManager:
   serializedVersion: 3
   tags:
   - RoomCarving
+  - UsedSpace
   layers:
   - Default
   - TransparentFX

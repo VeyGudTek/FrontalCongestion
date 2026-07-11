@@ -13,8 +13,8 @@ GameObject:
   - component: {fileID: 6136318508053687368}
   - component: {fileID: 2165660235418762637}
   m_Layer: 6
-  m_Name: UseSpace
-  m_TagString: Untagged
+  m_Name: UsedSpace
+  m_TagString: UsedSpace
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
