@@ -83,7 +83,7 @@ public class UsedSpaceManager : MonoBehaviour
         Ray ray = new Ray(roomCenter, direction);
         RaycastHit hit;
 
-        int layerNum = LayerMask.NameToLayer("UsedSpace");
+        int layerNum = LayerMask.NameToLayer(Layers.UsedSpace);
         int layerMask = 1 << layerNum;
 
         if (Physics.Raycast(ray, out hit, maxDistance, layerMask))

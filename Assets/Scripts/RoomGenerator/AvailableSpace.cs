@@ -12,7 +12,7 @@ public class AvailableSpace : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!HasCollision && other.TryGetComponent<RoomCarving>(out _))
+        if (!HasCollision && other.gameObject.CompareTag(Tags.RoomCarving))
         {
             HasCollision = true;
             Vertices = transform.GetVertices();
