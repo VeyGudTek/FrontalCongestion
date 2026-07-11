@@ -18,8 +18,12 @@ public class RoomGenerator : Singleton<RoomGenerator>
     [SerializeField]
     private GameObject RoomCarvingInstance;
 
-    const float PlayingFieldSize = 100f;
-    const float PlayingFieldHeight = 50f;
+    private const float PlayingFieldSize = 100f;
+    private const float PlayingFieldHeight = 50f;
+
+    private const int TotalRooms = 100;
+    private int CurrentRooms = 0;
+    
 
     private void Awake()
     {
@@ -43,33 +47,48 @@ public class RoomGenerator : Singleton<RoomGenerator>
 
     private void Update()
     {
-        if (InputManager.GetInstance().IsJump)
+        CreateRooms();
+    }
+
+    private void CreateRooms()
+    {
+        if (CurrentRooms >= TotalRooms)
+        {
+            return;
+        }
+
+        if (RoomCarvingInstance == null)
         {
             CarveSpace();
         }
+        else
+        {
+            GenerateRoom();
+            CurrentRooms++;
+        }
     }
+
+
 
     private void CarveSpace()
     {
-        if (RoomCarvingInstance == null)
-        {
-            (Vector3 size, Vector3 position) = UsedSpaceManager.GetNewRoomSizeAndPosition(AvailableSpaceManager.GetAvailableSpaces());
+        (Vector3 size, Vector3 position) = UsedSpaceManager.GetNewRoomSizeAndPosition(AvailableSpaceManager.GetAvailableSpaces());
 
-            RoomCarvingInstance = Instantiate(RoomCarvingPrefab, position, Quaternion.identity);
-            RoomCarvingInstance.transform.localScale = size;
-            RoomCarvingInstance.transform.SetParent(transform);
+        RoomCarvingInstance = Instantiate(RoomCarvingPrefab, position, Quaternion.identity);
+        RoomCarvingInstance.transform.localScale = size;
+        RoomCarvingInstance.transform.SetParent(transform);
 
-            return;
-        }
-        else
-        {
-            UsedSpaceManager.RegisterRoom(RoomCarvingInstance);
-            AvailableSpaceManager.CarveSpaces();
+        return;
+    }
 
-            Destroy(RoomCarvingInstance);
-            RoomCarvingInstance = null;
+    private void GenerateRoom()
+    {
+        UsedSpaceManager.RegisterRoom(RoomCarvingInstance);
+        AvailableSpaceManager.CarveSpaces();
 
-            AvailableSpaceManager.ResetSpaces();
-        }
+        Destroy(RoomCarvingInstance);
+        RoomCarvingInstance = null;
+
+        AvailableSpaceManager.ResetSpaces();
     }
 }
