@@ -8,6 +8,8 @@ public class AvailableSpace : MonoBehaviour
     public List<Vector3> Vertices;
     public List<Vector3> OtherVertices;
 
+    public float Volume => transform.GetVolume();
+
     private void OnTriggerEnter(Collider other)
     {
         if (!HasCollision && other.TryGetComponent<RoomCarving>(out _))
@@ -16,6 +18,12 @@ public class AvailableSpace : MonoBehaviour
             Vertices = transform.GetVertices();
             OtherVertices = other.transform.GetVertices();
         }
+    }
+
+    public Vector3 GetRandomPoint()
+    {
+        Vector3 randomOffset = transform.GetRandomOffset();
+        return transform.position + randomOffset;
     }
 
     public void ResetCollisions()

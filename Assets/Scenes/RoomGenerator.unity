@@ -456,9 +456,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd90a0eb91b44a1429784f43b3b2ad61, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomGenerator
-  AvailableSpaceManager: {fileID: 1354827024971325837, guid: 168f30d2f0de0114e920c21d8ff6de2e, type: 3}
+  AvailableSpaceManagerPrefab: {fileID: 1354827024971325837, guid: 168f30d2f0de0114e920c21d8ff6de2e, type: 3}
+  UsedSpaceManagerPrefab: {fileID: 487359800815278312, guid: 3d5dfa79943a16345b53759e9bb0852e, type: 3}
   RoomCarvingPrefab: {fileID: 4488527289635178022, guid: fd45f64dc8f0ca14498f28dc3db7df5b, type: 3}
-  RoomGenerationSpaceManager: {fileID: 0}
+  AvailableSpaceManager: {fileID: 0}
+  UsedSpaceManager: {fileID: 0}
   RoomCarvingInstance: {fileID: 0}
 --- !u!4 &1082122784
 Transform:

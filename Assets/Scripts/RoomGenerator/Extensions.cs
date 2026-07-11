@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public static class Extensions
+public static class TransformExtensions
 {
     public static List<Vector3> GetVertices(this Transform transform)
     {
@@ -26,6 +26,20 @@ public static class Extensions
         }
 
         return verticess;
+    }
+
+    public static float GetVolume(this Transform transform)
+    {
+        return transform.localScale.x * transform.localScale.y * transform.localScale.z;
+    }
+
+    public static Vector3 GetRandomOffset(this Transform transform)
+    {
+        return new Vector3(
+            Random.Range(-(transform.localScale.x / 2f), transform.localScale.x / 2f),
+            Random.Range(-(transform.localScale.y / 2f), transform.localScale.y / 2f),
+            Random.Range(-(transform.localScale.z / 2f), transform.localScale.z / 2f)
+        );
     }
 
     public static List<Vector3> GetInsideVertices(this Transform transform, List<Vector3> vertices)

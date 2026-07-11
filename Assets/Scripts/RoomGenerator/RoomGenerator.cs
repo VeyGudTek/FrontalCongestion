@@ -4,23 +4,22 @@ public class RoomGenerator : Singleton<RoomGenerator>
 {
     [Header("Prefabs")]
     [SerializeField]
-    private GameObject AvailableSpaceManager;
+    private GameObject AvailableSpaceManagerPrefab;
+    [SerializeField]
+    private GameObject UsedSpaceManagerPrefab;
     [SerializeField] 
     private GameObject RoomCarvingPrefab;
 
     [Header("Instances")]
     [SerializeField]
-    private AvailableSpaceManager RoomGenerationSpaceManager;
+    private AvailableSpaceManager AvailableSpaceManager;
+    [SerializeField]
+    private UsedSpaceManager UsedSpaceManager;
     [SerializeField]
     private GameObject RoomCarvingInstance;
 
     const float PlayingFieldSize = 100f;
     const float PlayingFieldHeight = 50f;
-
-    const float MaxRoomSize = 10f;
-    const float MinRoomSize = 5f;
-    const float MaxRoomHeight = 5f;
-    const float MinRoomHeight = 2.5f;
 
     private void Awake()
     {
@@ -34,9 +33,12 @@ public class RoomGenerator : Singleton<RoomGenerator>
 
     private void InitializeSpace()
     {
-        GameObject spaceManagerObject = Instantiate(AvailableSpaceManager, transform);
-        RoomGenerationSpaceManager = spaceManagerObject.GetComponent<AvailableSpaceManager>();
-        RoomGenerationSpaceManager.InitializeSpace(new Vector3(PlayingFieldSize, PlayingFieldHeight, PlayingFieldSize), Vector3.zero);
+        GameObject spaceManagerObject = Instantiate(AvailableSpaceManagerPrefab, transform);
+        AvailableSpaceManager = spaceManagerObject.GetComponent<AvailableSpaceManager>();
+        AvailableSpaceManager.InitializeSpace(new Vector3(PlayingFieldSize, PlayingFieldHeight, PlayingFieldSize), Vector3.zero);
+
+        GameObject usedSpaceManagerObject = Instantiate(UsedSpaceManagerPrefab, transform);
+        UsedSpaceManager = usedSpaceManagerObject.GetComponent<UsedSpaceManager>();
     }
 
     private void Update()
@@ -51,38 +53,23 @@ public class RoomGenerator : Singleton<RoomGenerator>
     {
         if (RoomCarvingInstance == null)
         {
-            RoomCarvingInstance = Instantiate(RoomCarvingPrefab, GetRandomPosition(), Quaternion.identity);
-            RoomCarvingInstance.transform.localScale = GetRandomSize();
+            (Vector3 size, Vector3 position) = UsedSpaceManager.GetNewRoomSizeAndPosition(AvailableSpaceManager.GetAvailableSpaces());
+
+            RoomCarvingInstance = Instantiate(RoomCarvingPrefab, position, Quaternion.identity);
+            RoomCarvingInstance.transform.localScale = size;
             RoomCarvingInstance.transform.SetParent(transform);
 
             return;
         }
         else
         {
-            RoomGenerationSpaceManager.CarveSpaces();
+            UsedSpaceManager.RegisterRoom(RoomCarvingInstance);
+            AvailableSpaceManager.CarveSpaces();
 
             Destroy(RoomCarvingInstance);
             RoomCarvingInstance = null;
 
-            RoomGenerationSpaceManager.ResetSpaces();
+            AvailableSpaceManager.ResetSpaces();
         }
-    }
-
-    private Vector3 GetRandomPosition()
-    {
-        return new Vector3(
-            Random.Range(-PlayingFieldSize / 2f, PlayingFieldSize / 2f),
-            Random.Range(-PlayingFieldHeight / 2f, PlayingFieldHeight / 2f),
-            Random.Range(-PlayingFieldSize / 2f, PlayingFieldSize / 2f)
-        );
-    }
-
-    private Vector3 GetRandomSize()
-    {
-        return new Vector3(
-            Random.Range(MinRoomSize, MaxRoomSize),
-            Random.Range(MinRoomHeight, MaxRoomHeight),
-            Random.Range(MinRoomSize, MaxRoomSize)
-        );
     }
 }

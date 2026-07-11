@@ -19,6 +19,11 @@ public class AvailableSpaceManager : MonoBehaviour
         AvailableSpaces.Add(newSpaceObject.GetComponent<AvailableSpace>());
     }
 
+    public List<AvailableSpace> GetAvailableSpaces()
+    {
+        return new List<AvailableSpace>(AvailableSpaces);
+    }
+
     public void ResetSpaces()
     {
         foreach (AvailableSpace space in AvailableSpaces)
