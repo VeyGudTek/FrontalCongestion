@@ -5,6 +5,8 @@ public class LevelGenerator : MonoBehaviour
 {
     [SerializeField]
     private GameObject RoomPrefab;
+    [SerializeField]
+    private GameObject DebugPoint;
 
     [SerializeField]
     private List<Room> RoomList = new List<Room>();
@@ -41,7 +43,7 @@ public class LevelGenerator : MonoBehaviour
         Height = height;
         CreateRoom(left, right, forward, back);
 
-        TotalRooms = 50;
+        TotalRooms = 2;
     }
 
     private void GenerateRandomRoom()
@@ -57,18 +59,22 @@ public class LevelGenerator : MonoBehaviour
 
     private (float left, float right, float forward, float back) GetNewRoomDimensions(Edge startingEdge, Vector3 startingPoint)
     {
+        CreateDebugPoint(startingPoint);
+
         Vector3 newRoomSize = new Vector3(Random.Range(MinRoomSize, MaxRoomSize), Height, Random.Range(MinRoomSize, MaxRoomSize));
         Vector3 halfExtents = newRoomSize / 2f;
         Vector3 center = GetCenter(startingEdge, startingPoint, halfExtents);
         (float left, float right, float forward, float back) = GetNewStartingBounds(center, halfExtents);
 
+        CreateDebugPoint(center);
+
         int layerNum = LayerMask.NameToLayer(Layers.Room);
         int layerMask = 1 << layerNum;
 
-        Collider[] collisions = Physics.OverlapBox(center, halfExtents, Quaternion.identity, layerMask);
+        Collider[] collisions = Physics.OverlapBox(center, halfExtents - FloatConstants.OverLapThreshold, Quaternion.identity, layerMask);
         foreach (Collider collision in collisions)
         {
-            Room collidedRoom = collision.GetComponent<Room>();
+            Room collidedRoom = collision.GetComponentInParent<Room>();
             (float newLeft, float newRight, float newForward, float newBack) = collidedRoom.GetClampedDimensions(left, right, forward, back, startingEdge);
 
             left = newLeft;
@@ -89,16 +95,16 @@ public class LevelGenerator : MonoBehaviour
         switch(startingEdge)
         {
             case Edge.Left:
-                x += halfExtents.x;
-                break;
-            case Edge.Right:
                 x -= halfExtents.x;
                 break;
+            case Edge.Right:
+                x += halfExtents.x;
+                break;
             case Edge.Forward:
-                z -= halfExtents.z;
+                z += halfExtents.z;
                 break;
             case Edge.Back:
-                z += halfExtents.z;
+                z -= halfExtents.z;
                 break;
             default:
                 throw new System.ArgumentOutOfRangeException("Undefined Edge");
@@ -125,5 +131,10 @@ public class LevelGenerator : MonoBehaviour
         newRoom.SetBounds(left, right, forward, back, CurrentLevel, Height);
 
         RoomList.Add(newRoom.GetComponent<Room>());
+    }
+
+    private void CreateDebugPoint(Vector3 point)
+    {
+        Instantiate(DebugPoint, point, Quaternion.identity, transform);
     }
 }
