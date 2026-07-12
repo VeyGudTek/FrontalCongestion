@@ -2,15 +2,6 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
-public enum UsedSpaceManagerState
-{
-    Waiting,
-    ComputingPosition,
-    ComputingSizeInstantiation,
-    ComputingSizeCollisionDetection,
-    Finished
-}
-
 public class UsedSpaceManager : MonoBehaviour
 {
     const float MaxRoomSize = 40f;
@@ -30,69 +21,18 @@ public class UsedSpaceManager : MonoBehaviour
     [SerializeField]
     private List<GameObject> UsedSpaces = new List<GameObject>();
 
-    [Header("State")]
-    [SerializeField]
-    private Vector3 ComputedSize = Vector3.zero;
-    [SerializeField]
-    private Vector3 ComputedPosition = Vector3.zero;
-    [SerializeField]
-    private UsedSpaceManagerState State = UsedSpaceManagerState.Waiting;
-    [SerializeField]
-    private List<AvailableSpace> InputAvailableSpace = new List<AvailableSpace>();
-
-    public UsedSpaceManagerState CurrentState => State;
-    public Vector3 NewSize => ComputedSize;
-    public Vector3 NewPosition => ComputedPosition;
-
-    public void StartComputingSizeAndPosition(List<AvailableSpace> inputSpaces)
+    public (Vector3 size, Vector3 position) GetNewPositionAndSize(List<AvailableSpace> inputSpaces)
     {
-        ComputedSize = Vector3.zero;
-        ComputedPosition = Vector3.zero;
-        State = UsedSpaceManagerState.ComputingPosition;
-        InputAvailableSpace = inputSpaces;
+        Vector3 newPosition = GetPosition(inputSpaces);
+        Vector3 newSize = GetSize(newPosition);
+        RegisterRoom(newPosition, newSize);
+
+        return (newSize, newPosition);
     }
 
-    public void ResetState()
+    private Vector3 GetPosition(List<AvailableSpace> inputSpaces)
     {
-        State = UsedSpaceManagerState.Waiting;
-    }
-
-    private void Update()
-    {
-        if (State == UsedSpaceManagerState.Waiting || State == UsedSpaceManagerState.Finished)
-        {
-            return;
-        }
-
-        if (State == UsedSpaceManagerState.ComputingPosition)
-        {
-            ComputedPosition = ComputeRandomPosition();
-            State = UsedSpaceManagerState.ComputingSizeInstantiation;
-            return;
-        }
-        if (State == UsedSpaceManagerState.ComputingSizeInstantiation)
-        {
-            SpawnSizeChecker();
-            State = UsedSpaceManagerState.ComputingSizeCollisionDetection;
-            return;
-        }
-        if (State == UsedSpaceManagerState.ComputingSizeCollisionDetection)
-        {
-            ComputeSize();
-            RegisterRoom();
-            RemoveChecker();
-            State = UsedSpaceManagerState.Finished;
-            return;
-        }
-
-        throw new System.ArgumentOutOfRangeException($"Unknown State: {State}");
-    }
-
-
-
-    private Vector3 ComputeRandomPosition()
-    {
-        Dictionary<AvailableSpace, float> volumeMapping = InputAvailableSpace.ToDictionary(s => s, s => s.Volume);
+        Dictionary<AvailableSpace, float> volumeMapping = inputSpaces.ToDictionary(s => s, s => s.Volume);
         float totalVolume = volumeMapping.Values.Aggregate((sum, curr) => curr + sum);
         float multiplier = 1.0f / totalVolume;
 
@@ -116,7 +56,17 @@ public class UsedSpaceManager : MonoBehaviour
         throw new System.IndexOutOfRangeException("Volume Sum does not add up to 1.0f");
     }
 
-    private void SpawnSizeChecker()
+    private Vector3 GetSize(Vector3 newPosition)
+    {
+        UsedSpaceChecker newChecker = SpawnSizeChecker(newPosition);
+        Vector3 newSize = newChecker.GetClampedSize();
+
+        Destroy(newChecker.gameObject);
+
+        return newSize;
+    }
+
+    private UsedSpaceChecker SpawnSizeChecker(Vector3 newPosition)
     {
         Vector3 newMaxSize = new Vector3(
             Random.Range(MinRoomSize, MaxRoomSize),
@@ -124,31 +74,19 @@ public class UsedSpaceManager : MonoBehaviour
             Random.Range(MinRoomSize, MaxRoomSize)
         );
 
-        GameObject newChecker = Instantiate(UsedSpaceCheckerPrefab, ComputedPosition, Quaternion.identity);
+        GameObject newChecker = Instantiate(UsedSpaceCheckerPrefab, newPosition, Quaternion.identity);
         newChecker.transform.localScale = newMaxSize;
         newChecker.transform.SetParent(transform);
 
-        UsedSpaceCheckerInstance = newChecker;
+        return newChecker.GetComponent<UsedSpaceChecker>();
     }
 
-    private void ComputeSize()
+    private void RegisterRoom(Vector3 newPosition, Vector3 newSize)
     {
-        UsedSpaceChecker checker = UsedSpaceCheckerInstance.GetComponent<UsedSpaceChecker>();
-        ComputedSize = checker.GetClampedSize();
-    }
-
-    private void RegisterRoom()
-    {
-        GameObject newSpace = Instantiate(UsedSpacePrefab, ComputedPosition, Quaternion.identity);
-        newSpace.transform.localScale = ComputedSize;
+        GameObject newSpace = Instantiate(UsedSpacePrefab, newPosition, Quaternion.identity);
+        newSpace.transform.localScale = newSize;
         newSpace.transform.SetParent(transform);
 
         UsedSpaces.Add(newSpace);
-    }
-
-    private void RemoveChecker()
-    {
-        Destroy(UsedSpaceCheckerInstance);
-        UsedSpaceCheckerInstance = null;
     }
 }

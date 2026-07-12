@@ -5,25 +5,22 @@ using System.Linq;
 public class UsedSpaceChecker : MonoBehaviour
 {
     [SerializeField]
-    private bool HasCollision = false;
-
-    [SerializeField]
     private List<Transform> Collisions = new List<Transform>();
 
-    private void OnTriggerEnter(Collider other)
+    private void PopulateCollisions()
     {
-        if (other.gameObject.CompareTag(Tags.UsedSpace))
-        {
-            HasCollision = true;
-            Collisions.Add(other.transform);
-        }
+        int layerNum = LayerMask.NameToLayer(Layers.UsedSpace);
+        int layerMask = 1 << layerNum;
+
+        Collider[] collisions = Physics.OverlapBox(transform.position, transform.GetHalfExtents(), Quaternion.identity, layerMask);
+
+        Collisions = collisions.Select(c => c.transform).ToList();
     }
 
     public Vector3 GetClampedSize()
     {
-        return transform.localScale;
-
-        if (!HasCollision)
+        PopulateCollisions();
+        if (Collisions.Count == 0)
         {
             return transform.localScale;
         }

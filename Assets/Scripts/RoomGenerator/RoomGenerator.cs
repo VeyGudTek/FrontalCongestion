@@ -21,7 +21,7 @@ public class RoomGenerator : Singleton<RoomGenerator>
     private const float PlayingFieldSize = 100f;
     private const float PlayingFieldHeight = 50f;
 
-    private const int TotalRooms = 5;
+    private const int TotalRooms = 100;
     private int CurrentRooms = 0;
     
 
@@ -70,19 +70,10 @@ public class RoomGenerator : Singleton<RoomGenerator>
 
     private void GenerateCarving()
     {
-        if (UsedSpaceManager.CurrentState == UsedSpaceManagerState.Waiting)
-        {
-            UsedSpaceManager.StartComputingSizeAndPosition(AvailableSpaceManager.GetAvailableSpaces());
-            return;
-        }
-        if (UsedSpaceManager.CurrentState != UsedSpaceManagerState.Finished)
-        {
-            return;
-        }
-        UsedSpaceManager.ResetState();
+        (Vector3 size, Vector3 position) = UsedSpaceManager.GetNewPositionAndSize(AvailableSpaceManager.GetAvailableSpaces());
 
-        RoomCarvingInstance = Instantiate(RoomCarvingPrefab, UsedSpaceManager.NewPosition, Quaternion.identity);
-        RoomCarvingInstance.transform.localScale = UsedSpaceManager.NewSize;
+        RoomCarvingInstance = Instantiate(RoomCarvingPrefab, position, Quaternion.identity);
+        RoomCarvingInstance.transform.localScale = size;
         RoomCarvingInstance.transform.SetParent(transform);
 
         return;
