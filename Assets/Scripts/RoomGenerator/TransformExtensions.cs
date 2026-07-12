@@ -3,6 +3,15 @@ using UnityEngine;
 
 public static class TransformExtensions
 {
+    public static Vector3 GetHalfExtents(this Transform transform)
+    {
+        return new Vector3(
+            transform.localScale.x / 2f,
+            transform.localScale.y / 2f,
+            transform.localScale.z / 2f
+        );
+    }
+
     public static float GetTopBound(this Transform transform)
     {
         return transform.position.y + transform.localScale.y / 2f;

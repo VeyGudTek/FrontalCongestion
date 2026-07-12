@@ -4,21 +4,10 @@ using UnityEngine;
 
 public class AvailableSpace : MonoBehaviour
 {
-    public bool HasCollision = false;
-    public List<Vector3> Vertices;
-    public List<Vector3> OtherVertices;
+    private List<Vector3> Vertices;
+    private List<Vector3> OtherVertices;
 
     public float Volume => transform.GetVolume();
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (!HasCollision && other.gameObject.CompareTag(Tags.RoomCarving))
-        {
-            HasCollision = true;
-            Vertices = transform.GetVertices();
-            OtherVertices = other.transform.GetVertices();
-        }
-    }
 
     public Vector3 GetRandomPoint()
     {
@@ -26,18 +15,20 @@ public class AvailableSpace : MonoBehaviour
         return transform.position + randomOffset;
     }
 
-    public void ResetCollisions()
-    {
-        HasCollision = false;
-    }
-
     public List<(Vector3 position, Vector3 size)> GetNewSpaceTransforms()
     {
-        if (!HasCollision)
+        int layerNum = LayerMask.NameToLayer(Layers.RoomCarving);
+        int layerMask = 1 << layerNum;
+
+        Collider[] collisions = Physics.OverlapBox(transform.position, transform.GetHalfExtents(), Quaternion.identity, layerMask);
+
+        if (collisions.Length == 0)
         {
             return new List<(Vector3 position, Vector3 size)> { (this.transform.position, this.transform.localScale) };
         }
 
+        Vertices = transform.GetVertices();
+        OtherVertices = collisions[0].transform.GetVertices();
         return GenerateTransformByVertices();
     }
 

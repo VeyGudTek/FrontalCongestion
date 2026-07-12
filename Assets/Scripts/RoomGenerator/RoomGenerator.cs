@@ -84,19 +84,15 @@ public class RoomGenerator : Singleton<RoomGenerator>
         RoomCarvingInstance = Instantiate(RoomCarvingPrefab, UsedSpaceManager.NewPosition, Quaternion.identity);
         RoomCarvingInstance.transform.localScale = UsedSpaceManager.NewSize;
         RoomCarvingInstance.transform.SetParent(transform);
-        Debug.Break();
 
         return;
     }
 
     private void GenerateRoom()
     {
-        Debug.Break();
         AvailableSpaceManager.CarveSpaces();
 
         Destroy(RoomCarvingInstance);
         RoomCarvingInstance = null;
-
-        AvailableSpaceManager.ResetSpaces();
     }
 }

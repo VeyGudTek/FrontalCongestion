@@ -24,14 +24,6 @@ public class AvailableSpaceManager : MonoBehaviour
         return new List<AvailableSpace>(AvailableSpaces);
     }
 
-    public void ResetSpaces()
-    {
-        foreach (AvailableSpace space in AvailableSpaces)
-        {
-            space.ResetCollisions();
-        }
-    }
-
     public void CarveSpaces()
     {
         List<GameObject> oldObjects = AvailableSpaces.Select(s => s.gameObject).ToList();
