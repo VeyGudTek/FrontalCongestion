@@ -139,31 +139,30 @@ public class Room : MonoBehaviour
         bool collidedForward = false;
         bool collidedBack = false;
 
-        if (left < RightBound && right > RightBound && !(originalEdge == Edge.Right))
+        if (left < RightBound && right > RightBound && originalEdge != Edge.Right)
         {
             collisions++;
             collidedLeft = true;
         }
-        if (right > LeftBound && left < LeftBound && !(originalEdge == Edge.Left))
+        if (right > LeftBound && left < LeftBound && originalEdge != Edge.Left)
         {
             collisions++;
             collidedRight = true;
         }
-        if (forward > BackBound && back < BackBound && !(originalEdge == Edge.Back))
+        if (forward > BackBound && back < BackBound && originalEdge != Edge.Back)
         {
             collisions++;
             collidedForward = true;
         }
-        if (back < ForwardBound && forward > ForwardBound && !(originalEdge == Edge.Forward))
+        if (back < ForwardBound && forward > ForwardBound && originalEdge != Edge.Forward)
         {
             collisions++;
             collidedBack = true;
         }
 
-        //Previous Clamping Removed collisions.
-        if (collisions == 0)
+        if (collisions != 0 && collisions > 2)
         {
-            return (left, right, forward, back);
+            throw new System.ArgumentOutOfRangeException($"Unexpected number of collisions: {collisions}");
         }
 
         bool alreadyCollided = false;

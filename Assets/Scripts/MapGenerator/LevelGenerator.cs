@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Unity.Burst.CompilerServices;
 
 public class LevelGenerator : MonoBehaviour
 {
@@ -62,63 +63,83 @@ public class LevelGenerator : MonoBehaviour
         CreateDebugPoint(startingPoint);
 
         Vector3 newRoomSize = new Vector3(Random.Range(MinRoomSize, MaxRoomSize), Height, Random.Range(MinRoomSize, MaxRoomSize));
-        Vector3 halfExtents = newRoomSize / 2f;
-        Vector3 center = GetCenter(startingEdge, startingPoint, halfExtents);
-        (float left, float right, float forward, float back) = GetNewStartingBounds(center, halfExtents);
-
-        CreateDebugPoint(center);
+        (float left, float right, float forward, float back) = GetNewStartingBounds(startingEdge, startingPoint, newRoomSize);
 
         int layerNum = LayerMask.NameToLayer(Layers.Room);
         int layerMask = 1 << layerNum;
 
-        Collider[] collisions = Physics.OverlapBox(center, halfExtents - FloatConstants.OverLapThreshold, Quaternion.identity, layerMask);
-        foreach (Collider collision in collisions)
+        while (true)
         {
-            Room collidedRoom = collision.GetComponentInParent<Room>();
-            (float newLeft, float newRight, float newForward, float newBack) = collidedRoom.GetClampedDimensions(left, right, forward, back, startingEdge);
+            Vector3 halfExtents = (new Vector3(
+                right - left,
+                1f,
+                forward - back
+            ) / 2f) - FloatConstants.OverLapThreshold;
+            Vector3 center = new Vector3(
+                (right + left) / 2f,
+                startingPoint.y,
+                (forward + back) / 2f
+            );
 
-            left = newLeft;
-            right = newRight;
-            forward = newForward;
-            back = newBack;
+            Collider[] collisions = Physics.OverlapBox(center, halfExtents, Quaternion.identity, layerMask);
+            if (collisions.Length > 0)
+            {
+                Debug.Log(collisions.Length);
+                Room collidedRoom = collisions[0].GetComponentInParent<Room>();
+                (float newLeft, float newRight, float newForward, float newBack) = collidedRoom.GetClampedDimensions(left, right, forward, back, startingEdge);
+
+                left = newLeft;
+                right = newRight;
+                forward = newForward;
+                back = newBack;
+            }
+            else
+            {
+                break;
+            }
+            
         }
 
         return (left, right, forward, back);
     }
 
-    private Vector3 GetCenter(Edge startingEdge, Vector3 startingPoint, Vector3 halfExtents)
+    private (float left, float right, float forward, float back) GetNewStartingBounds(Edge startingEdge, Vector3 startingPoint, Vector3 newRoomSize)
     {
-        float x = startingPoint.x;
-        float y = startingPoint.y;
-        float z = startingPoint.z;
+        float left = startingPoint.x;
+        float right = startingPoint.x;
+        float forward = startingPoint.z;
+        float back = startingPoint.z;
 
-        switch(startingEdge)
+        float xPartitionOne = Random.Range(0f, newRoomSize.x - FloatConstants.MinDoorToWallDistance);
+        float xPartitionTwo = newRoomSize.x - xPartitionOne;
+        float zPartitionOne = Random.Range(0f, newRoomSize.z - FloatConstants.MinDoorToWallDistance);
+        float zPartitionTwo = newRoomSize.z - zPartitionOne;
+
+        switch (startingEdge)
         {
             case Edge.Left:
-                x -= halfExtents.x;
+                left -= newRoomSize.x;
+                forward += zPartitionOne;
+                back -= zPartitionTwo;
                 break;
             case Edge.Right:
-                x += halfExtents.x;
+                right += newRoomSize.x;
+                forward += zPartitionOne;
+                back -= zPartitionTwo;
                 break;
             case Edge.Forward:
-                z += halfExtents.z;
+                left -= xPartitionOne;
+                right += xPartitionTwo;
+                forward += newRoomSize.z;
                 break;
             case Edge.Back:
-                z -= halfExtents.z;
+                left -= xPartitionOne;
+                right += xPartitionTwo;
+                back -= newRoomSize.z;
                 break;
             default:
                 throw new System.ArgumentOutOfRangeException("Undefined Edge");
         }
-
-        return new Vector3(x, y, z);
-    }
-
-    private (float left, float right, float forward, float back) GetNewStartingBounds(Vector3 center, Vector3 halfExtents)
-    {
-        float left = center.x - halfExtents.x;
-        float right = center.x + halfExtents.x;
-        float forward = center.z + halfExtents.z;
-        float back = center.z - halfExtents.z;
 
         return new (left, right, forward, back);
     }
