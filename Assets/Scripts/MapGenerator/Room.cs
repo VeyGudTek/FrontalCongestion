@@ -12,13 +12,6 @@ public enum Edge
 
 public class Room : MonoBehaviour
 {
-    [System.Serializable]
-    private class AvailableEdge
-    {
-        public Edge Edge;
-        public List<(float start, float end)> AvailableLines;
-    }
-
     [SerializeField]
     Transform Template;
 
@@ -39,7 +32,7 @@ public class Room : MonoBehaviour
 
     [Header("Peripheral")]
     [SerializeField]
-    List<AvailableEdge> AvailableEdges = new List<AvailableEdge>();
+    List<AvailableEdgeDto> AvailableEdges = new List<AvailableEdgeDto>();
     [SerializeField]
     List<NeighborDto> Neighbors = new List<NeighborDto>();
 
@@ -60,10 +53,14 @@ public class Room : MonoBehaviour
         ForwardBound = forward;
         BackBound = back;
 
-        AvailableEdges.Add(new AvailableEdge() { Edge = Edge.Left, AvailableLines =    new List<(float start, float end)> { (back, forward) } });
-        AvailableEdges.Add(new AvailableEdge() { Edge = Edge.Right, AvailableLines =   new List<(float start, float end)> { (back, forward) } });
-        AvailableEdges.Add(new AvailableEdge() { Edge = Edge.Forward, AvailableLines = new List<(float start, float end)> { (left, right) } });
-        AvailableEdges.Add(new AvailableEdge() { Edge = Edge.Back, AvailableLines =    new List<(float start, float end)> { (left, right) } });
+        AvailableEdges.Add(new AvailableEdgeDto() { Edge = Edge.Left, AvailableLines =    new List<(float start, float end)> { (back, forward) } });
+        AvailableEdges.Add(new AvailableEdgeDto() { Edge = Edge.Right, AvailableLines =   new List<(float start, float end)> { (back, forward) } });
+        AvailableEdges.Add(new AvailableEdgeDto() { Edge = Edge.Forward, AvailableLines = new List<(float start, float end)> { (left, right) } });
+        AvailableEdges.Add(new AvailableEdgeDto() { Edge = Edge.Back, AvailableLines =    new List<(float start, float end)> { (left, right) } });
+        foreach(AvailableEdgeDto ae in AvailableEdges)
+        {
+            ae.UpdateDebug();
+        }
 
         UpdateDisplay();
     }
@@ -80,7 +77,7 @@ public class Room : MonoBehaviour
         float randomThreshold = Random.value * totalPerimeter;
         float currentThreshold = 0f;
 
-        foreach (AvailableEdge ae in AvailableEdges)
+        foreach (AvailableEdgeDto ae in AvailableEdges)
         {
             foreach ((float start, float end) in ae.AvailableLines)
             {
@@ -91,11 +88,10 @@ public class Room : MonoBehaviour
                     float randomValue = Random.Range(start, end);
                     float staticValue = GetBoundForEdge(ae.Edge);
 
-                    bool isHorizontalEdge = ae.Edge == Edge.Left || ae.Edge == Edge.Right;
                     Vector3 newVector = new Vector3(
-                        isHorizontalEdge ? staticValue : randomValue,
+                        ae.Edge.IsLateral() ? staticValue : randomValue,
                         Level,
-                        isHorizontalEdge ? randomValue : staticValue
+                        ae.Edge.IsLateral() ? randomValue : staticValue
                     );
 
                     return (ae.Edge, newVector);
@@ -109,7 +105,7 @@ public class Room : MonoBehaviour
     private float GetAvailablePerimeter()
     {
         float totalAvailablePerimeter = 0f;
-        foreach(AvailableEdge ae in AvailableEdges)
+        foreach(AvailableEdgeDto ae in AvailableEdges)
         {
             foreach ((float start, float end) in ae.AvailableLines)
             {
@@ -236,10 +232,10 @@ public class Room : MonoBehaviour
     {
         Neighbors.Add(new() { Neighbor = neighbor, SharedEdge = sharedEdge });
 
-        float neighborStart = sharedEdge.IsLateral() ? neighbor.LeftBound : neighbor.BackBound;
-        float neighborEnd = sharedEdge.IsLateral() ? neighbor.RightBound : neighbor.ForwardBound;
+        float neighborStart = sharedEdge.IsLateral() ? neighbor.BackBound : neighbor.LeftBound;
+        float neighborEnd = sharedEdge.IsLateral() ? neighbor.ForwardBound : neighbor.RightBound;
 
-        AvailableEdge edgeToShrink = AvailableEdges.Where(e => e.Edge == sharedEdge).First();
+        AvailableEdgeDto edgeToShrink = AvailableEdges.Where(e => e.Edge == sharedEdge).First();
 
         List<(float start, float end)> newAvailableLines = new List<(float start, float end)>();
         foreach((float start, float end) in edgeToShrink.AvailableLines)
@@ -273,5 +269,6 @@ public class Room : MonoBehaviour
         }
 
         edgeToShrink.AvailableLines = newAvailableLines;
+        edgeToShrink.UpdateDebug();
     }
 }
