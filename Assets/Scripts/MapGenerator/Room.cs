@@ -31,6 +31,7 @@ public class Room : MonoBehaviour
     private float BackBound;
 
     [Header("Peripheral")]
+    public float AvailablePerimeter = 0f;
     [SerializeField]
     List<AvailableEdgeDto> AvailableEdges = new List<AvailableEdgeDto>();
     [SerializeField]
@@ -62,6 +63,7 @@ public class Room : MonoBehaviour
             ae.UpdateDebug();
         }
 
+        UpdateAvailablePerimeter();
         UpdateDisplay();
     }
 
@@ -73,8 +75,7 @@ public class Room : MonoBehaviour
 
     public (Edge edge, Vector3 point) GetRandomAvailablePoint()
     {
-        float totalPerimeter = GetAvailablePerimeter();
-        float randomThreshold = Random.value * totalPerimeter;
+        float randomThreshold = Random.value * AvailablePerimeter;
         float currentThreshold = 0f;
 
         foreach (AvailableEdgeDto ae in AvailableEdges)
@@ -102,20 +103,6 @@ public class Room : MonoBehaviour
         throw new System.ArgumentOutOfRangeException("RandomThreshold Greater than total perimeter.");
     }
 
-    private float GetAvailablePerimeter()
-    {
-        float totalAvailablePerimeter = 0f;
-        foreach(AvailableEdgeDto ae in AvailableEdges)
-        {
-            foreach ((float start, float end) in ae.AvailableLines)
-            {
-                totalAvailablePerimeter += end - start;
-            }
-        }
-
-        return totalAvailablePerimeter;
-    }
-
     private float GetBoundForEdge(Edge edge)
     {
         switch (edge)
@@ -133,99 +120,78 @@ public class Room : MonoBehaviour
         }
     }
 
-    public (float left, float right, float forward, float back, Edge sharedEdge) GetClampedDimensions(float left, float right, float forward, float back, Edge originalEdge)
+    public (float left, float right, float forward, float back, Edge sharedEdge) GetClampedDimensions(float left, float right, float forward, float back, Edge originalEdge, Vector3 startingPoint)
     {
-        int collisions = 0;
-        bool collidedLeft = false;
-        bool collidedRight = false;
-        bool collidedForward = false;
-        bool collidedBack = false;
+        List<Edge> updatedEdges = new List<Edge>();
+        float clampedLeft = left;
+        float clampedRight = right;
+        float clampedForward = forward;
+        float clampedBack = back;
 
-        if (left < RightBound && left > LeftBound && right > RightBound && originalEdge != Edge.Right)
+        //Partially Enveloped Collision
+        if (originalEdge != Edge.Right && RightBound < startingPoint.x)
         {
-            collisions++;
-            collidedLeft = true;
+            clampedLeft = RightBound;
+            updatedEdges.Add(Edge.Left);
         }
-        if (right > LeftBound && right < RightBound && left < LeftBound && originalEdge != Edge.Left)
+        if (originalEdge != Edge.Left && LeftBound > startingPoint.x)
         {
-            collisions++;
-            collidedRight = true;
+            clampedRight = LeftBound;
+            updatedEdges.Add(Edge.Right);
         }
-        if (forward > BackBound && forward < ForwardBound && back < BackBound && originalEdge != Edge.Back)
+        if (originalEdge != Edge.Back && BackBound > startingPoint.z)
         {
-            collisions++;
-            collidedForward = true;
+            clampedForward = BackBound;
+            updatedEdges.Add(Edge.Forward);
         }
-        if (back < ForwardBound && back > BackBound && forward > ForwardBound && originalEdge != Edge.Forward)
+        if (originalEdge != Edge.Forward && ForwardBound < startingPoint.z)
         {
-            collisions++;
-            collidedBack = true;
-        }
-
-        if (collisions != 0 && collisions > 2)
-        {
-            throw new System.ArgumentOutOfRangeException($"Unexpected number of collisions: {collisions}");
+            clampedBack = ForwardBound;
+            updatedEdges.Add(Edge.Back);
         }
 
-        bool alreadyCollided = false;
-        bool ignoreCollision = collisions == 2 && Random.value > .5f;
-
-        float newLeft = left;
-        float newRight = right;
-        float newForward = forward;
-        float newBack = back;
-        Edge sharedEdge = Edge.Left;
-
-        if (collidedLeft)
+        //Fully Enveloped Collision
+        if (updatedEdges.Count == 0)
         {
-            if (ignoreCollision)
+            if (originalEdge == Edge.Left)
             {
-                ignoreCollision = false;
+                clampedLeft = RightBound;
+                updatedEdges.Add(Edge.Left);
             }
-            else
+            if (originalEdge == Edge.Right)
             {
-                newLeft = RightBound;
-                sharedEdge = Edge.Left;
-                alreadyCollided = true;
+                clampedRight = LeftBound;
+                updatedEdges.Add(Edge.Right);
             }
-        }
-        if (collidedRight && !alreadyCollided)
-        {
-            if (ignoreCollision)
+            if (originalEdge == Edge.Forward)
             {
-                ignoreCollision = false;
+                clampedForward = BackBound;
+                updatedEdges.Add(Edge.Forward);
             }
-            else
+            if (originalEdge == Edge.Back)
             {
-                newRight = LeftBound;
-                sharedEdge = Edge.Right;
-                alreadyCollided = true;
-            }
-        }
-        if (collidedForward && !alreadyCollided)
-        {
-            if (ignoreCollision)
-            {
-                ignoreCollision = false;
-            }
-            else
-            {
-                newForward = BackBound;
-                sharedEdge = Edge.Forward;
-                alreadyCollided = true;
-            }
-        }
-        if (collidedBack && !alreadyCollided)
-        {
-            if (!ignoreCollision)
-            {
-                newBack = ForwardBound;
-                sharedEdge = Edge.Back;
-                alreadyCollided = true;
+                clampedBack = ForwardBound;
+                updatedEdges.Add(Edge.Back);
             }
         }
 
-        return (newLeft, newRight, newForward, newBack, sharedEdge);
+        if (updatedEdges.Count != 1 && updatedEdges.Count != 2)
+        {
+            throw new System.InvalidOperationException($"Unexpected number of clamped values: {updatedEdges.Count}");
+        }
+
+        Edge randomUpdatedEdge = updatedEdges[Random.Range(0, updatedEdges.Count)];
+
+        if (randomUpdatedEdge == Edge.Left)
+            return (clampedLeft, right, forward, back, Edge.Left);
+        if (randomUpdatedEdge == Edge.Right)
+            return (left, clampedRight, forward, back, Edge.Right);
+        if (randomUpdatedEdge == Edge.Forward)
+            return (left, right, clampedForward, back, Edge.Forward);
+        if (randomUpdatedEdge == Edge.Back)
+            return (left, right, forward, clampedBack, Edge.Back);
+
+        throw new System.InvalidOperationException("Random Updated Value did not match any clamped values.");
     }
 
     public void AddNeighbor(Edge sharedEdge, Room neighbor)
@@ -270,5 +236,20 @@ public class Room : MonoBehaviour
 
         edgeToShrink.AvailableLines = newAvailableLines;
         edgeToShrink.UpdateDebug();
+        UpdateAvailablePerimeter();
+    }
+
+    private void UpdateAvailablePerimeter()
+    {
+        float newAvailablePerimeter = 0f;
+        foreach (AvailableEdgeDto ae in AvailableEdges)
+        {
+            foreach ((float start, float end) in ae.AvailableLines)
+            {
+                newAvailablePerimeter += end - start;
+            }
+        }
+
+        AvailablePerimeter = newAvailablePerimeter;
     }
 }

@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
-using Unity.Burst.CompilerServices;
+using System.Linq;
 
 public class LevelGenerator : MonoBehaviour
 {
@@ -47,8 +47,9 @@ public class LevelGenerator : MonoBehaviour
 
     private void GenerateRandomRoom()
     {
-        int randomIndex = Random.Range(0, RoomList.Count);
-        Room randomRoom = RoomList[randomIndex];
+        List<Room> roomsWithAvailablePerimeter = RoomList.Where(r => r.AvailablePerimeter > FloatConstants.MinDoorToWallDistance * 2f).ToList();
+        int randomIndex = Random.Range(0, roomsWithAvailablePerimeter.Count);
+        Room randomRoom = roomsWithAvailablePerimeter[randomIndex];
 
         (Edge availableEdge, Vector3 availablePoint) = randomRoom.GetRandomAvailablePoint();
         (float left, float right, float forward, float back, List<NeighborDto> neighbors) = GetNewRoomDimensions(availableEdge, availablePoint);
@@ -59,8 +60,6 @@ public class LevelGenerator : MonoBehaviour
 
     private (float left, float right, float forward, float back, List<NeighborDto> neighbors) GetNewRoomDimensions(Edge startingEdge, Vector3 startingPoint)
     {
-        CreateDebugPoint(startingPoint);
-
         Vector3 newRoomSize = new Vector3(Random.Range(MinRoomSize, MaxRoomSize), Height, Random.Range(MinRoomSize, MaxRoomSize));
         (float left, float right, float forward, float back) = GetNewStartingBounds(startingEdge, startingPoint, newRoomSize);
 
@@ -72,7 +71,7 @@ public class LevelGenerator : MonoBehaviour
         while (true)
         {
             breaker++;
-            if (breaker > 1000)
+            if (breaker > 250)
             {
                 throw new System.InvalidOperationException("Infinite Loop Reached while collision detecting.");
             }
@@ -92,7 +91,7 @@ public class LevelGenerator : MonoBehaviour
             if (collisions.Length > 0)
             {
                 Room collidedRoom = collisions[0].GetComponentInParent<Room>();
-                (float newLeft, float newRight, float newForward, float newBack, Edge sharedEdge) = collidedRoom.GetClampedDimensions(left, right, forward, back, startingEdge);
+                (float newLeft, float newRight, float newForward, float newBack, Edge sharedEdge) = collidedRoom.GetClampedDimensions(left, right, forward, back, startingEdge, startingPoint);
 
                 left = newLeft;
                 right = newRight;
