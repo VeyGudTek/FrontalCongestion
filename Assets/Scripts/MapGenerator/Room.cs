@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 public enum Edge
 {
@@ -26,6 +27,7 @@ public class Room : MonoBehaviour
     [SerializeField]
     private float Height;
 
+    [Header("Bounds")]
     [SerializeField]
     private float LeftBound;
     [SerializeField]
@@ -35,7 +37,11 @@ public class Room : MonoBehaviour
     [SerializeField]
     private float BackBound;
 
+    [Header("Peripheral")]
+    [SerializeField]
     List<AvailableEdge> AvailableEdges = new List<AvailableEdge>();
+    [SerializeField]
+    List<NeighborDto> Neighbors = new List<NeighborDto>();
 
     private float CenterX => (LeftBound + RightBound) / 2f;
     private float CenterZ => (ForwardBound + BackBound) / 2f;
@@ -131,7 +137,7 @@ public class Room : MonoBehaviour
         }
     }
 
-    public (float left, float right, float forward, float back) GetClampedDimensions(float left, float right, float forward, float back, Edge originalEdge)
+    public (float left, float right, float forward, float back, Edge sharedEdge) GetClampedDimensions(float left, float right, float forward, float back, Edge originalEdge)
     {
         int collisions = 0;
         bool collidedLeft = false;
@@ -172,6 +178,7 @@ public class Room : MonoBehaviour
         float newRight = right;
         float newForward = forward;
         float newBack = back;
+        Edge sharedEdge = Edge.Left;
 
         if (collidedLeft)
         {
@@ -182,6 +189,7 @@ public class Room : MonoBehaviour
             else
             {
                 newLeft = RightBound;
+                sharedEdge = Edge.Left;
                 alreadyCollided = true;
             }
         }
@@ -193,7 +201,8 @@ public class Room : MonoBehaviour
             }
             else
             {
-                newLeft = RightBound;
+                newRight = LeftBound;
+                sharedEdge = Edge.Right;
                 alreadyCollided = true;
             }
         }
@@ -205,7 +214,8 @@ public class Room : MonoBehaviour
             }
             else
             {
-                newLeft = RightBound;
+                newForward = BackBound;
+                sharedEdge = Edge.Forward;
                 alreadyCollided = true;
             }
         }
@@ -213,11 +223,55 @@ public class Room : MonoBehaviour
         {
             if (!ignoreCollision)
             {
-                newLeft = RightBound;
+                newBack = ForwardBound;
+                sharedEdge = Edge.Back;
                 alreadyCollided = true;
             }
         }
 
-        return (newLeft, newRight, newForward, newBack);
+        return (newLeft, newRight, newForward, newBack, sharedEdge);
+    }
+
+    public void AddNeighbor(Edge sharedEdge, Room neighbor)
+    {
+        Neighbors.Add(new() { Neighbor = neighbor, SharedEdge = sharedEdge });
+
+        float neighborStart = sharedEdge.IsLateral() ? neighbor.LeftBound : neighbor.BackBound;
+        float neighborEnd = sharedEdge.IsLateral() ? neighbor.RightBound : neighbor.ForwardBound;
+
+        AvailableEdge edgeToShrink = AvailableEdges.Where(e => e.Edge == sharedEdge).First();
+
+        List<(float start, float end)> newAvailableLines = new List<(float start, float end)>();
+        foreach((float start, float end) in edgeToShrink.AvailableLines)
+        {
+            if (neighborStart >= end || neighborEnd <= start)
+            {
+                newAvailableLines.Add((start, end));
+                continue;
+            }
+
+            if (neighborStart <= start && neighborEnd >= end)
+            {
+                continue;
+            }
+
+            if (neighborStart > start && neighborEnd < end)
+            {
+                newAvailableLines.Add((start, neighborStart));
+                newAvailableLines.Add((neighborEnd, end));
+                continue;
+            }
+
+            if (neighborEnd >= end)
+            {
+                newAvailableLines.Add((start, neighborStart));
+            }
+            else
+            {
+                newAvailableLines.Add((neighborEnd, end));
+            }
+        }
+
+        edgeToShrink.AvailableLines = newAvailableLines;
     }
 }

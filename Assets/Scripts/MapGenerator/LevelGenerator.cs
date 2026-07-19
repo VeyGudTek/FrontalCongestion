@@ -42,7 +42,7 @@ public class LevelGenerator : MonoBehaviour
     {
         CurrentLevel = level;
         Height = height;
-        CreateRoom(left, right, forward, back);
+        CreateRoom(left, right, forward, back, new());
 
         TotalRooms = 2;
     }
@@ -53,12 +53,13 @@ public class LevelGenerator : MonoBehaviour
         Room randomRoom = RoomList[randomIndex];
 
         (Edge availableEdge, Vector3 availablePoint) = randomRoom.GetRandomAvailablePoint();
-        (float left, float right, float forward, float back) = GetNewRoomDimensions(availableEdge, availablePoint);
+        (float left, float right, float forward, float back, List<NeighborDto> neighbors) = GetNewRoomDimensions(availableEdge, availablePoint);
 
-        CreateRoom(left, right, forward, back);
+        neighbors.Add(new() { Neighbor = randomRoom, SharedEdge = availableEdge.GetOpposite()});
+        CreateRoom(left, right, forward, back, neighbors);
     }
 
-    private (float left, float right, float forward, float back) GetNewRoomDimensions(Edge startingEdge, Vector3 startingPoint)
+    private (float left, float right, float forward, float back, List<NeighborDto> neighbors) GetNewRoomDimensions(Edge startingEdge, Vector3 startingPoint)
     {
         CreateDebugPoint(startingPoint);
 
@@ -68,6 +69,7 @@ public class LevelGenerator : MonoBehaviour
         int layerNum = LayerMask.NameToLayer(Layers.Room);
         int layerMask = 1 << layerNum;
 
+        List<NeighborDto> neighbors = new List<NeighborDto>();
         while (true)
         {
             Vector3 halfExtents = (new Vector3(
@@ -84,14 +86,15 @@ public class LevelGenerator : MonoBehaviour
             Collider[] collisions = Physics.OverlapBox(center, halfExtents, Quaternion.identity, layerMask);
             if (collisions.Length > 0)
             {
-                Debug.Log(collisions.Length);
                 Room collidedRoom = collisions[0].GetComponentInParent<Room>();
-                (float newLeft, float newRight, float newForward, float newBack) = collidedRoom.GetClampedDimensions(left, right, forward, back, startingEdge);
+                (float newLeft, float newRight, float newForward, float newBack, Edge sharedEdge) = collidedRoom.GetClampedDimensions(left, right, forward, back, startingEdge);
 
                 left = newLeft;
                 right = newRight;
                 forward = newForward;
                 back = newBack;
+
+                neighbors.Add(new() { Neighbor = collidedRoom, SharedEdge = sharedEdge });
             }
             else
             {
@@ -100,7 +103,7 @@ public class LevelGenerator : MonoBehaviour
             
         }
 
-        return (left, right, forward, back);
+        return (left, right, forward, back, neighbors);
     }
 
     private (float left, float right, float forward, float back) GetNewStartingBounds(Edge startingEdge, Vector3 startingPoint, Vector3 newRoomSize)
@@ -144,7 +147,7 @@ public class LevelGenerator : MonoBehaviour
         return new (left, right, forward, back);
     }
 
-    private void CreateRoom(float left, float right, float forward, float back)
+    private void CreateRoom(float left, float right, float forward, float back, List<NeighborDto> neighbors)
     {
         GameObject newObject = Instantiate(RoomPrefab, transform);
         Room newRoom = newObject.GetComponent<Room>();
@@ -152,6 +155,12 @@ public class LevelGenerator : MonoBehaviour
         newRoom.SetBounds(left, right, forward, back, CurrentLevel, Height);
 
         RoomList.Add(newRoom.GetComponent<Room>());
+
+        foreach (NeighborDto dto in neighbors)
+        {
+            newRoom.AddNeighbor(dto.SharedEdge, dto.Neighbor);
+            dto.Neighbor.AddNeighbor(dto.SharedEdge.GetOpposite(), newRoom);
+        }
     }
 
     private void CreateDebugPoint(Vector3 point)
