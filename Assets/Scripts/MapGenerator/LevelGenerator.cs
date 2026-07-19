@@ -14,7 +14,7 @@ public class LevelGenerator : MonoBehaviour
 
     [Header("Settings")]
     [SerializeField]
-    private int TotalRooms = 0;
+    private int TotalRooms = 10;
     [SerializeField]
     private float CurrentLevel = 0f;
     [SerializeField]
@@ -43,8 +43,6 @@ public class LevelGenerator : MonoBehaviour
         CurrentLevel = level;
         Height = height;
         CreateRoom(left, right, forward, back, new());
-
-        TotalRooms = 2;
     }
 
     private void GenerateRandomRoom()
@@ -70,8 +68,15 @@ public class LevelGenerator : MonoBehaviour
         int layerMask = 1 << layerNum;
 
         List<NeighborDto> neighbors = new List<NeighborDto>();
+        int breaker = 0;
         while (true)
         {
+            breaker++;
+            if (breaker > 1000)
+            {
+                throw new System.InvalidOperationException("Infinite Loop Reached while collision detecting.");
+            }
+
             Vector3 halfExtents = (new Vector3(
                 right - left,
                 1f,

@@ -141,22 +141,22 @@ public class Room : MonoBehaviour
         bool collidedForward = false;
         bool collidedBack = false;
 
-        if (left < RightBound && right > RightBound && originalEdge != Edge.Right)
+        if (left < RightBound && left > LeftBound && right > RightBound && originalEdge != Edge.Right)
         {
             collisions++;
             collidedLeft = true;
         }
-        if (right > LeftBound && left < LeftBound && originalEdge != Edge.Left)
+        if (right > LeftBound && right < RightBound && left < LeftBound && originalEdge != Edge.Left)
         {
             collisions++;
             collidedRight = true;
         }
-        if (forward > BackBound && back < BackBound && originalEdge != Edge.Back)
+        if (forward > BackBound && forward < ForwardBound && back < BackBound && originalEdge != Edge.Back)
         {
             collisions++;
             collidedForward = true;
         }
-        if (back < ForwardBound && forward > ForwardBound && originalEdge != Edge.Forward)
+        if (back < ForwardBound && back > BackBound && forward > ForwardBound && originalEdge != Edge.Forward)
         {
             collisions++;
             collidedBack = true;
