@@ -128,7 +128,6 @@ public class Room : MonoBehaviour
         float clampedForward = forward;
         float clampedBack = back;
 
-        //Partially Enveloped Collision
         if (originalEdge != Edge.Right && RightBound < startingPoint.x)
         {
             clampedLeft = RightBound;
@@ -150,31 +149,6 @@ public class Room : MonoBehaviour
             updatedEdges.Add(Edge.Back);
         }
 
-        //Fully Enveloped Collision
-        if (updatedEdges.Count == 0)
-        {
-            if (originalEdge == Edge.Left)
-            {
-                clampedLeft = RightBound;
-                updatedEdges.Add(Edge.Left);
-            }
-            if (originalEdge == Edge.Right)
-            {
-                clampedRight = LeftBound;
-                updatedEdges.Add(Edge.Right);
-            }
-            if (originalEdge == Edge.Forward)
-            {
-                clampedForward = BackBound;
-                updatedEdges.Add(Edge.Forward);
-            }
-            if (originalEdge == Edge.Back)
-            {
-                clampedBack = ForwardBound;
-                updatedEdges.Add(Edge.Back);
-            }
-        }
-
         if (updatedEdges.Count != 1 && updatedEdges.Count != 2)
         {
             throw new System.InvalidOperationException($"Unexpected number of clamped values: {updatedEdges.Count}");
@@ -192,7 +166,7 @@ public class Room : MonoBehaviour
             return (left, right, forward, clampedBack, Edge.Back);
 
         throw new System.InvalidOperationException("Random Updated Value did not match any clamped values.");
-    }
+    } 
 
     public void AddNeighbor(Edge sharedEdge, Room neighbor)
     {

@@ -415,7 +415,7 @@ MonoBehaviour:
   RoomPrefab: {fileID: 3758593585270603857, guid: f6c1b5782c819204abe685f39040016a, type: 3}
   DebugPoint: {fileID: 2114458622687515314, guid: 47888c99df4f44e488694c0877c8fdc2, type: 3}
   RoomList: []
-  TotalRooms: 50
+  TotalRooms: 200
   CurrentLevel: 0
   MinRoomSize: 50
   MaxRoomSize: 5

@@ -60,6 +60,8 @@ public class LevelGenerator : MonoBehaviour
 
     private (float left, float right, float forward, float back, List<NeighborDto> neighbors) GetNewRoomDimensions(Edge startingEdge, Vector3 startingPoint)
     {
+        CreateDebugPoint(startingPoint);
+
         Vector3 newRoomSize = new Vector3(Random.Range(MinRoomSize, MaxRoomSize), Height, Random.Range(MinRoomSize, MaxRoomSize));
         (float left, float right, float forward, float back) = GetNewStartingBounds(startingEdge, startingPoint, newRoomSize);
 
@@ -87,6 +89,7 @@ public class LevelGenerator : MonoBehaviour
                 (forward + back) / 2f
             );
 
+            Physics.SyncTransforms();
             Collider[] collisions = Physics.OverlapBox(center, halfExtents, Quaternion.identity, layerMask);
             if (collisions.Length > 0)
             {
